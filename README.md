@@ -1,5 +1,7 @@
 Title: Telegram Bot Template
+
 Language: Java
+
 Tools: Spring Framework, TelegramBots
 
 Benefits: 
@@ -11,9 +13,11 @@ Error handler: notification about error as InlineKeyboardButton
 
 Screenshots: 
 ![Profile](https://github.com/m-tsybulskyi-git/telegram-bot-template/blob/master/src/main/resources/static/images/profile.png)
+Profile 
 ![Language](https://github.com/m-tsybulskyi-git/telegram-bot-template/blob/master/src/main/resources/static/images/language.png)
+Language
 ![Error](https://github.com/m-tsybulskyi-git/telegram-bot-template/blob/master/src/main/resources/static/images/error.png)
-
+Error
 
 
 
