@@ -3,7 +3,7 @@
 
 >Tools: **Spring Framework, [TelegramBots](https://github.com/rubenlagus/TelegramBots)**
 
-Benefits: 
+### Benefits: 
 
 + **Fabric method pattern:** every state has handler to proccess input (message, callback query);
 + **One message bot :** all navigation occur in one place - start message from bot editing evry time when it is needed;
