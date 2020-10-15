@@ -2,7 +2,6 @@ package ua.mtsybulskyi.template.botapi.handlers.settings;
 
 import ua.mtsybulskyi.template.botapi.BotState;
 import ua.mtsybulskyi.template.botapi.handlers.InputHandler;
-import ua.mtsybulskyi.template.domain.UserData;
 import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
 import ua.mtsybulskyi.template.service.UserDataService;
@@ -12,10 +11,8 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +41,7 @@ public class ProfileHandle extends InputHandler {
     }
 
     @Override
-    public BotState getPreviousHandler() {
+    public BotState getPreviousHandlerName() {
         return BotState.MENU_SETTINGS;
     }
 
@@ -62,30 +59,27 @@ public class ProfileHandle extends InputHandler {
 
         List<InlineKeyboardButton> row1 = List.of(button1);
         return List.of(row1, getBackButton());
-
     }
 
     private String getUserData(long chatId){
-        UserData user = userDataService.getUserProfileData(chatId);
-        String age = userDataService.getAge(chatId);
-
-        String gender = switch (user.getGender()){
-            case "woman" -> messageService.getMessage("woman", localeTag);
-            case "man" -> messageService.getMessage("man", localeTag);
+        String gender = userDataService.getGender(chatId);
+        gender = switch (gender){
+            case "woman" -> messageService.getMessage(gender, localeTag);
+            case "man" -> messageService.getMessage(gender, localeTag);
             default -> "\uD83D\uDEAB";
         };
 
         String userInfo = "<u>" + messageService.getMessage("settings.profile", localeTag) + "</u>\n";
-        userInfo += "<b>" + messageService.getMessage("profile.name", localeTag) + "</b>" +
-                    " " + user.getName() + "\n";
-        userInfo += "<b>" + messageService.getMessage("profile.surname", localeTag) + "</b>" +
-                    " " + user.getSurname() +"\n";
+        userInfo += "<b>" + messageService.getMessage("profile.first_name", localeTag) + "</b>" +
+                    " " + userDataService.getFirstName(chatId) + "\n";
+        userInfo += "<b>" + messageService.getMessage("profile.last_name", localeTag) + "</b>" +
+                    " " + userDataService.getLastName(chatId) +"\n";
         userInfo += "<b>" + messageService.getMessage("profile.email", localeTag) + "</b>" +
-                    " " + user.getEmail() +"\n";
+                    " " + userDataService.getEmail(chatId) +"\n";
         userInfo += "<b>" + messageService.getMessage("profile.gender", localeTag) + "</b>" +
-                    " " + gender+ "\n";
+                    " " + gender + "\n";
         userInfo += "<b>" + messageService.getMessage("profile.age", localeTag) + "</b>" +
-                    " " + age + "\n";
+                    " " + userDataService.getAge(chatId) + "\n";
         return userInfo;
     }
 }

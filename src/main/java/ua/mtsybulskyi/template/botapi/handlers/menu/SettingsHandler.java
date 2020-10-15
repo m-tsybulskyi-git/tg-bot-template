@@ -46,7 +46,7 @@ public class SettingsHandler extends InputHandler {
     }
 
     @Override
-    public BotState getPreviousHandler() {
+    public BotState getPreviousHandlerName() {
         return BotState.MENU_MAIN;
     }
 

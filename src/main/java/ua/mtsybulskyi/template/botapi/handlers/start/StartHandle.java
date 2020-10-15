@@ -50,7 +50,7 @@ public class StartHandle extends InputHandler {
     }
 
     @Override
-    public BotState getPreviousHandler() {
+    public BotState getPreviousHandlerName() {
         return getHandlerName();
     }
 
@@ -72,7 +72,7 @@ public class StartHandle extends InputHandler {
         long chatId = message.getChatId();
         return messageService
                 .getMessage("message.start", localeTag,
-                        userDataService.getName(chatId),
-                        userDataService.getSurname(chatId));
+                        userDataService.getFirstName(chatId),
+                        userDataService.getLastName(chatId));
     }
 }

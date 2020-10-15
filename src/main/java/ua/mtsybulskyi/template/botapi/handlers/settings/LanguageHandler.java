@@ -9,12 +9,12 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import ua.mtsybulskyi.template.botapi.BotState;
 import ua.mtsybulskyi.template.botapi.handlers.InputHandler;
+import ua.mtsybulskyi.template.domain.UserData;
 import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
 import ua.mtsybulskyi.template.service.UserDataService;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -29,8 +29,10 @@ public class LanguageHandler extends InputHandler {
     @Override
     public BotApiMethod<?> handle(Message message) {
         long chatId = message.getChatId();
-        if (!userDataService.getLastMessageFromBot(chatId).getMessageId().equals(message.getMessageId())) {
-            return getReplyMessage(userDataService.getLastMessageFromBot(chatId),
+        UserData user = userDataService.getUserData(chatId);
+
+        if (!user.getMessage().getMessageId().equals(message.getMessageId())) {
+            return getReplyMessage(user.getMessage(),
                     "settings.language", false, "error.language");
         }
 
@@ -40,24 +42,25 @@ public class LanguageHandler extends InputHandler {
     @Override
     public BotApiMethod<?> handle(CallbackQuery callbackQuery) {
         long chatId = callbackQuery.getMessage().getChatId();
+        UserData user =  userDataService.getUserData(chatId);
         String error = null;
 
         switch (callbackQuery.getData()) {
             case "locale.eu" -> {
                 localeTag = "eu-EU";
-                userDataService.setLanguageTag(chatId, "eu-EU");
+               user.setLanguage("eu-EU");
             }
             case "locale.ua" -> {
                 localeTag = "ua-UA";
-                userDataService.setLanguageTag(chatId, "ua-UA");
+                user.setLanguage("ua-UA");
             }
             case "locale.ru" -> {
                 localeTag = "ru-RU";
-                userDataService.setLanguageTag(chatId, "ru-RU");
+                user.setLanguage("ru-RU");
             }
             case "back" -> {
-                BotState botState = getPreviousHandler();
-                userDataService.setUserState(chatId, botState);
+                BotState botState = getPreviousHandlerName();
+                user.setBotState(botState);
                 return handlerService.getHandler(botState).handle(callbackQuery.getMessage());
             }
 
@@ -68,7 +71,7 @@ public class LanguageHandler extends InputHandler {
     }
 
     @Override
-    public BotState getPreviousHandler() {
+    public BotState getPreviousHandlerName() {
         return BotState.MENU_SETTINGS;
     }
 

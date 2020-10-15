@@ -1,111 +1,114 @@
 package ua.mtsybulskyi.template.service;
 
-import ua.mtsybulskyi.template.botapi.BotState;
-import ua.mtsybulskyi.template.domain.UserData;
-import ua.mtsybulskyi.template.repository.UsersProfileRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
+import ua.mtsybulskyi.template.botapi.BotState;
+import ua.mtsybulskyi.template.domain.UserData;
+import ua.mtsybulskyi.template.repository.RoleRepository;
+import ua.mtsybulskyi.template.repository.UserRepository;
+
+import java.util.Arrays;
 
 @Slf4j
 @Service
+@Transactional
 public class UserDataService {
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
-    private final UsersProfileRepository profileRepository;
+    String notFound = "\uD83D\uDEAB";
 
-    public UserDataService(UsersProfileRepository profileRepository) {
-        this.profileRepository = profileRepository;
+    public UserDataService(UserRepository userRepository, RoleRepository roleRepository) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
 
-    public boolean saveStartUserData(Message message){
+    public void saveStartUserData(Message message) {
         User user = message.getFrom();
         UserData userData = new UserData();
 
-        if(profileRepository.findByChatId(message.getChatId()) == null) {
+        if (userRepository.findByChatId(message.getChatId()) == null) {
             userData.setChatId(message.getChatId());
-            userData.setName(user.getFirstName());
-            userData.setSurname(user.getLastName());
-            userData.setGender("\uD83D\uDEAB");
-            userData.setEmail("\uD83D\uDEAB");
-            userData.setAge(0);
-            userData.setLanguage("eu-EU");
-            userData.setState(BotState.START.toString());
-            saveUserProfileData(userData);
-            return true;
+
+            userData.setFirstName(user.getFirstName());
+            userData.setLastName(user.getLastName());
+            userData.setRoles(Arrays.asList(roleRepository.findByName("ROLE_USER")));
+
+            saveUserData(userData);
         }
-        return false;
     }
 
-    public void saveUserProfileData(UserData userData) {
-        profileRepository.save(userData);
+    @Transactional
+    public void saveUserData(UserData userData) {
+        userRepository.save(userData);
     }
 
-    public UserData getUserProfileData(long chatId) {
-        return profileRepository.findByChatId(chatId);
+    @Transactional
+    public UserData getUserData(long chatId) {
+        return userRepository.findByChatId(chatId);
     }
 
-    public void setName(long chatId, String name){
-        getUserProfileData(chatId).setName(name);
+    @Transactional
+    public String getFirstName(long chatId){
+        String firstName = userRepository.findByChatId(chatId).getFirstName();
+        if(validation(firstName)) return notFound;
+        return firstName;
     }
 
-    public void setSurname(long chatId, String surname){
-        getUserProfileData(chatId).setSurname(surname);
+    @Transactional
+    public String getLastName(long chatId){
+        String lastName = userRepository.findByChatId(chatId).getLastName();
+        if(validation(lastName)) return notFound;
+        return lastName;
     }
 
-    public void setEmail(long chatId, String email){
-        getUserProfileData(chatId).setEmail(email);
+    @Transactional
+    public String getEmail(long chatId){
+        String email = userRepository.findByChatId(chatId).getEmail();
+        if(validation(email)) return notFound;
+        return email;
     }
 
-    public void setGender(long chatId, String gender){
-        if(gender.equals("man") || gender.equals("woman")) profileRepository.updateGender(chatId, gender);
-        else throw new NullPointerException();
+    @Transactional
+    public String getGender(long chatId) {
+        String gender = userRepository.findByChatId(chatId).getGender();
+        if (validation(gender)) return notFound;
+
+        return gender;
     }
 
-    public void setAge(long chatId, int age){
-        profileRepository.updateAge(chatId, age);
+    @Transactional
+    public String getAge(long chatId) {
+        int age = userRepository.findByChatId(chatId).getAge();
+        if (validation(age)) return notFound;
+        return String.valueOf(age);
     }
 
-    public void setLanguageTag(long chatId, String languageTag){ profileRepository.setLanguageTag(chatId, languageTag); }
 
-    public String getLanguageTag(long chatId){
-        return profileRepository.getLanguageTag(chatId);
+    @Transactional
+    public String getLanguageTag(long chatId) {
+        String languageTag = userRepository.findByChatId(chatId).getLanguage();
+        if(validation(languageTag)) return "eu-EU";
+
+        return languageTag;
     }
 
-    public String getLanguageTag(Message message){
-         return profileRepository.getLanguageTag(message.getChatId());
-    }
-
-    public void setUserState(long chatId, BotState botState) {
-        profileRepository.setBotState(chatId, botState.toString());
-    }
-
+    @Transactional
     public BotState getUserState(long chatId) {
-        String botState = profileRepository.getUserBotState(chatId);
-        if(botState == null) return BotState.START;
+        String botState = userRepository.findByChatId(chatId).getBotState().toString();
+        if (botState == null) return BotState.START;
         return BotState.valueOf(botState);
     }
+/*******************Validation************************/
 
-    public void setLastMessageFromBot(long chatId, Message message) {
-        profileRepository.findByChatId(chatId).setMessage(message);
+    private boolean validation(String text){
+        return text == null || text.isEmpty();
     }
 
-    public Message getLastMessageFromBot(long chatId) {
-        return profileRepository.findByChatId(chatId).getMessage();
-    }
-
-    public String getName(long chatId) {
-        return profileRepository.findByChatId(chatId).getName();
-    }
-
-    public String getSurname(long chatId) {
-        return profileRepository.findByChatId(chatId).getSurname();
-    }
-
-    public String getAge(long chatId) {
-        int age = profileRepository.getAge(chatId);
-        if(age <= 0) return "\uD83D\uDEAB";
-       return String.valueOf(age);
+    private boolean validation(int integer){
+        return integer <= 0;
     }
 }

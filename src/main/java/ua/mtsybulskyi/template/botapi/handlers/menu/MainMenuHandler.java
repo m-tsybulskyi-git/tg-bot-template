@@ -46,7 +46,7 @@ public class MainMenuHandler extends InputHandler {
     }
 
     @Override
-    public BotState getPreviousHandler() {
+    public BotState getPreviousHandlerName() {
         return getHandlerName();
     }
 

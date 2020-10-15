@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import ua.mtsybulskyi.template.botapi.BotState;
+import ua.mtsybulskyi.template.domain.UserData;
 import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
 import ua.mtsybulskyi.template.service.UserDataService;
@@ -35,7 +36,7 @@ public abstract class InputHandler {
 
     public abstract BotState getHandlerName();
 
-    public abstract BotState getPreviousHandler();
+    public abstract BotState getPreviousHandlerName();
 
     protected InputHandler(LocaleMessageService messageService,
                            UserDataService userDataService,
@@ -48,10 +49,10 @@ public abstract class InputHandler {
     protected BotApiMethod<?> getReplyMessage(Message inputMessage, String messageText,
                                               boolean newMessage, String error, Object... args) {
         localeTag = userDataService.getLanguageTag(inputMessage.getChatId());
-
+        UserData user = userDataService.getUserData(inputMessage.getChatId());
         if(messageText == null || messageText.isEmpty()) {
-            userDataService.setUserState(inputMessage.getChatId(), getPreviousHandler());
-            return redirectFromMessage(inputMessage, getPreviousHandler());
+            user.setBotState(getPreviousHandlerName());
+            return redirectFromMessage(inputMessage, getPreviousHandlerName());
         }
 
         String text =  messageService.getMessage(messageText, localeTag, args);
@@ -102,9 +103,11 @@ public abstract class InputHandler {
 
     protected BotApiMethod<?> redirectFromCallback(CallbackQuery callbackQuery, Map<String, BotState> map) {
         Map<String, BotState> stateMap = new HashMap<>(Map.copyOf(map));
-
         long chatId = callbackQuery.getMessage().getChatId();
-        stateMap.put("back", getPreviousHandler());
+        UserData userData = userDataService.getUserData(chatId);
+
+
+        stateMap.put("back", getPreviousHandlerName());
         BotState botState = stateMap.get(callbackQuery.getData());
 
         if (botState == null) {
@@ -114,8 +117,8 @@ public abstract class InputHandler {
             return errorCallbackQuery;
         }
 
-        userDataService.setLastMessageFromBot(chatId, callbackQuery.getMessage());
-        userDataService.setUserState(chatId, botState);
+        userData.setMessage(callbackQuery.getMessage());
+        userData.setBotState(botState);
         log.info(botState.toString());
 
         InputHandler inputHandler = handlerService.findMessageHandler(botState);
@@ -125,8 +128,8 @@ public abstract class InputHandler {
     }
 
     protected BotApiMethod<?> redirectFromMessage(Message message, BotState botState) {
-        int userId = message.getFrom().getId();
-        userDataService.setUserState(userId, botState);
+        long chatId = message.getChatId();
+        userDataService.getUserData(chatId).setBotState(botState);
         return handlerService.getHandler(botState).handle(message);
     }
 

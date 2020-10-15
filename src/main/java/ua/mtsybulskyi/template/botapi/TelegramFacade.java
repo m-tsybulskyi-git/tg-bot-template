@@ -1,6 +1,7 @@
 package ua.mtsybulskyi.template.botapi;
 
 import ua.mtsybulskyi.template.QuestionAnsweringBot;
+import ua.mtsybulskyi.template.domain.UserData;
 import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.UserDataService;
 import lombok.extern.slf4j.Slf4j;
@@ -49,20 +50,23 @@ public class TelegramFacade {
 
     private BotApiMethod<?> handleInput(Message message) {
         long chatId = message.getChatId();
+        UserData user = userDataService.getUserData(chatId);
+
         BotState botState;
         BotApiMethod<?> reply;
 
         botState = switch (message.getText()) {
             case "/start" -> {
+
                 userDataService.saveStartUserData(message);
-                if(userDataService.getLastMessageFromBot(chatId) != null)
-                    questionAnsweringBot.deleteMessage(userDataService.getLastMessageFromBot(chatId));
+                if(user.getMessage() != null)
+                    questionAnsweringBot.deleteMessage(user.getMessage());
                 yield BotState.START;
             }
 
             default -> userDataService.getUserState(chatId);
         };
-        userDataService.setUserState(chatId, botState);
+        user.setBotState(botState);
         reply = handlerService.processInputMessage(botState, message);
         return reply;
     }

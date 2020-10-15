@@ -1,5 +1,7 @@
 package ua.mtsybulskyi.template.appconfig;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import ua.mtsybulskyi.template.QuestionAnsweringBot;
 import lombok.Getter;
 import lombok.Setter;
@@ -40,5 +42,4 @@ public class BotConfig {
         messageSource.setDefaultEncoding("UTF-8");
         return messageSource;
     }
-
 }

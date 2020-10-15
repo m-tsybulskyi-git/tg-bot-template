@@ -8,6 +8,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import ua.mtsybulskyi.template.botapi.BotState;
 import ua.mtsybulskyi.template.botapi.handlers.InputHandler;
+import ua.mtsybulskyi.template.domain.UserData;
 import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
 import ua.mtsybulskyi.template.service.UserDataService;
@@ -27,26 +28,29 @@ public class EditProfile extends InputHandler {
     @Override
     public BotApiMethod<?> handle(Message message) {
         long chatId = message.getChatId();
-        localeTag = userDataService.getLanguageTag(chatId);
+        UserData user = userDataService.getUserData(chatId);
+        localeTag = user.getLanguage();
+
 
         if (userDataService.getUserState(chatId).equals(BotState.PROFILE_EDIT)) {
-            userDataService.setUserState(chatId, BotState.PROFILE_NAME);
-            userDataService.setLastMessageFromBot(chatId, message);
+            user.setBotState(BotState.PROFILE_NAME);
+            user.setMessage(message);
         }
-        Message botMessage = userDataService.getLastMessageFromBot(chatId);
+        Message botMessage = user.getMessage();
         return processUsersInput(message, botMessage);
     }
 
     @Override
     public BotApiMethod<?> handle(CallbackQuery callbackQuery) {
         long chatId = callbackQuery.getMessage().getChatId();
-        String text = callbackQuery.getData();
-        Message messageFromBot = userDataService.getLastMessageFromBot(chatId);
+        UserData user = userDataService.getUserData(chatId);
+        String data = callbackQuery.getData();
+        Message messageFromBot = user.getMessage();
 
         BotState botState = userDataService.getUserState(chatId);
-        if (botState.equals(BotState.PROFILE_AGE) && !text.equals("back") && !text.equals("error")) {
-            userDataService.setUserState(chatId, BotState.PROFILE_FILLED);
-            if(!text.equals("next")) userDataService.setGender(chatId, text);
+        if (botState.equals(BotState.PROFILE_AGE) && !data.equals("back") && !data.equals("error")) {
+            user.setBotState(BotState.PROFILE_FILLED);
+            if(!data.equals("next")) user.setGender(data);
 
             return getReplyMessage(messageFromBot, "profile.age", false, null);
         }
@@ -62,25 +66,26 @@ public class EditProfile extends InputHandler {
     private BotApiMethod<?> processUsersInput(Message message, Message botMessage) {
         String usersAnswer = message.getText();
         long chatId = message.getChatId();
-        BotState botState = userDataService.getUserState(chatId);
+        UserData user = userDataService.getUserData(chatId);
+        BotState botState = user.getBotState();
         log.info(botState.toString());
 
         boolean nextState = message.getMessageId().equals(botMessage.getMessageId());
 
         if (botState.equals(BotState.PROFILE_NAME)) {
-            userDataService.setUserState(chatId, BotState.PROFILE_SURNAME);
-            return getReplyMessage(botMessage, "profile.name", false, null);
+            user.setBotState(BotState.PROFILE_SURNAME);
+            return getReplyMessage(botMessage, "profile.first_name", false, null);
         }
 
         if (botState.equals(BotState.PROFILE_SURNAME)) {
-            if (!nextState) userDataService.setName(chatId, usersAnswer);
-            userDataService.setUserState(chatId, BotState.PROFILE_EMAIL);
-            return getReplyMessage(botMessage, "profile.surname", false, null);
+            if (!nextState) user.setFirstName(usersAnswer);
+            user.setBotState(BotState.PROFILE_EMAIL);
+            return getReplyMessage(botMessage, "profile.last_name", false, null);
         }
 
         if (botState.equals(BotState.PROFILE_EMAIL)) {
-            if (!nextState) userDataService.setSurname(chatId, usersAnswer);
-            userDataService.setUserState(chatId, BotState.PROFILE_GENDER);
+            if (!nextState) user.setLastName(usersAnswer);
+            user.setBotState(BotState.PROFILE_GENDER);
             return getReplyMessage(botMessage, "profile.email", false, null);
         }
 
@@ -89,10 +94,10 @@ public class EditProfile extends InputHandler {
                 if (emailValidation(message.getText())) {
                     return getReplyMessage(botMessage, "profile.email", false, "error.profile.email");
                 }
-                userDataService.setEmail(chatId, usersAnswer);
+                user.setEmail(usersAnswer);
             }
 
-            userDataService.setUserState(chatId, BotState.PROFILE_AGE);
+            user.setBotState(BotState.PROFILE_AGE);
             return getReplyMessage(botMessage, "profile.gender", false, getGenderKeyboard(), null);
         }
 
@@ -107,14 +112,13 @@ public class EditProfile extends InputHandler {
             if (!nextState) {
                 try {
                     age = Integer.parseInt(usersAnswer);
-                    userDataService.setAge(chatId, age);
+                    user.setAge(age);
                 } catch (NumberFormatException exception) {
                     return getReplyMessage(botMessage, "profile.age", false, "error.profile.age");
                 }
-
-                userDataService.setUserState(chatId, BotState.SETTINGS_PROFILE);
-                return redirectFromMessage(botMessage, BotState.SETTINGS_PROFILE);
             }
+            user.setBotState(BotState.SETTINGS_PROFILE);
+            return redirectFromMessage(botMessage, BotState.SETTINGS_PROFILE);
         }
 
         return null;
@@ -122,7 +126,7 @@ public class EditProfile extends InputHandler {
 
 
     @Override
-    public BotState getPreviousHandler() {
+    public BotState getPreviousHandlerName() {
         return BotState.SETTINGS_PROFILE;
     }
 
