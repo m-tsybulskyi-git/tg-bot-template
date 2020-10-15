@@ -104,7 +104,7 @@ public class UserDataService {
     }
 
     public String getAge(long chatId) {
-        int age = profileRepository.findByChatId(chatId).getAge();
+        int age = profileRepository.getAge(chatId);
         if(age <= 0) return "\uD83D\uDEAB";
        return String.valueOf(age);
     }
