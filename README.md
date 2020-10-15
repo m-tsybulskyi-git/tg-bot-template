@@ -6,7 +6,7 @@
 ### Benefits: 
 
 + **Fabric method pattern:** every state has handler to proccess input (message, callback query);
-+ **One message bot :** all navigation occur in one place - start message from bot editing evry time when it is needed;
++ **One message bot :** all navigation occur in one place - start message from bot edits every time when it is needed;
 + **Language support:** supporting English, Ukrainian, Russian languages;
 + **Error handler:** notification about error as InlineKeyboardButton
 
