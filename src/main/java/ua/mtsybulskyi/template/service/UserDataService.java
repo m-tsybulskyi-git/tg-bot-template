@@ -6,11 +6,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 import ua.mtsybulskyi.template.botapi.BotState;
+import ua.mtsybulskyi.template.domain.Role;
 import ua.mtsybulskyi.template.domain.UserData;
 import ua.mtsybulskyi.template.repository.RoleRepository;
 import ua.mtsybulskyi.template.repository.UserRepository;
 
 import java.util.Arrays;
+import java.util.Collection;
 
 @Slf4j
 @Service
@@ -101,6 +103,12 @@ public class UserDataService {
         String botState = userRepository.findByChatId(chatId).getBotState().toString();
         if (botState == null) return BotState.START;
         return BotState.valueOf(botState);
+    }
+
+    @Transactional
+    public String getUserRole(long chatId) {
+        Collection<Role> roles = userRepository.findByChatId(chatId).getRoles();
+        return roles.toString();
     }
 /*******************Validation************************/
 

@@ -11,9 +11,8 @@ import java.util.Collection;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Role {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     int id;
 
     String name;

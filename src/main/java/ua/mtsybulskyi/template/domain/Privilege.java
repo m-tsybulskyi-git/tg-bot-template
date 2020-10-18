@@ -12,7 +12,7 @@ import java.util.Collection;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Privilege {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     private Long id;
     private String name;
 

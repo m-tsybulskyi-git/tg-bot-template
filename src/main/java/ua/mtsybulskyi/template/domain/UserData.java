@@ -15,7 +15,7 @@ import java.util.Collection;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserData implements Serializable {
     @Id
-    @GeneratedValue()
+    @GeneratedValue
     int id;
 
     long chatId;

@@ -64,8 +64,7 @@ public class ProfileHandle extends InputHandler {
     private String getUserData(long chatId){
         String gender = userDataService.getGender(chatId);
         gender = switch (gender){
-            case "woman" -> messageService.getMessage(gender, localeTag);
-            case "man" -> messageService.getMessage(gender, localeTag);
+            case "woman", "man" -> messageService.getMessage(gender, localeTag);
             default -> "\uD83D\uDEAB";
         };
 
@@ -80,6 +79,9 @@ public class ProfileHandle extends InputHandler {
                     " " + gender + "\n";
         userInfo += "<b>" + messageService.getMessage("profile.age", localeTag) + "</b>" +
                     " " + userDataService.getAge(chatId) + "\n";
+
+        userInfo += "<b>" + messageService.getMessage("w", localeTag) + "</b>" +
+                " " + userDataService.getUserRole(chatId) + "\n";
         return userInfo;
     }
 }
