@@ -10,6 +10,7 @@ import ua.mtsybulskyi.template.botapi.BotState;
 import ua.mtsybulskyi.template.botapi.handlers.InputHandler;
 import ua.mtsybulskyi.template.cache.DataCache;
 import ua.mtsybulskyi.template.domain.Role;
+import ua.mtsybulskyi.template.domain.Roles;
 import ua.mtsybulskyi.template.domain.UserData;
 import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
@@ -52,7 +53,7 @@ public class EditRoles extends InputHandler {
                 userDataService.setBotState(chatId, botState);
                 return redirectFromMessage(callbackQuery.getMessage(), botState);
             }
-            case "error" -> error = "error.roles";
+            case "error" -> error ="error.roles";
             default -> userDataService.setRole(user.getChatId(), callbackQuery.getData());
         }
 
@@ -73,7 +74,7 @@ public class EditRoles extends InputHandler {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
 
         if (userDataService.hasPrivilege(chatId, "CHANGE_ROLES_PRIVILEGE")) {
-            userDataService.getRoles().forEach(x -> keyboard.add(getRoleButton(x)));
+            userDataService.getRoles(true).forEach(x -> keyboard.add(getRoleButton(chatId, x)));
         }
 
         keyboard.add(getBackButton());
@@ -81,16 +82,24 @@ public class EditRoles extends InputHandler {
         return keyboard;
     }
 
-    private List<InlineKeyboardButton> getRoleButton(Role role) {
+    private List<InlineKeyboardButton> getRoleButton(long chatId, Role role) {
         InlineKeyboardButton button = new InlineKeyboardButton();
-        String textButton = messageService.getMessage(role.getName(), localeTag);
+        String text = messageService.getMessage(role.getName(), localeTag);
 
-        if (userDataService.getUserRole(user.getChatId()).equals(role.getName())) {
-            textButton += " ✅";
+        if (userDataService.getUserRoleString(user.getChatId()).equals(role.getName())) {
+            text += " ✅";
         }
 
-        button.setText(textButton);
-        button.setCallbackData(role.getName());
+        String userRole = userDataService.getUserRoleString(chatId);
+        if (Roles.valueOf(userRole).getPriority() > Roles.valueOf(role.getName()).getPriority()) {
+            text += " \uD83D\uDEAB";
+            button.setCallbackData("error");
+        }else{
+            button.setCallbackData(role.getName());
+        }
+
+        button.setText(text);
+
         return List.of(button);
     }
 }

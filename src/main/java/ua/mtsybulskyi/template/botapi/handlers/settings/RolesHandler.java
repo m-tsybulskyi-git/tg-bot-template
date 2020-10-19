@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import ua.mtsybulskyi.template.botapi.BotState;
 import ua.mtsybulskyi.template.botapi.handlers.InputHandler;
 import ua.mtsybulskyi.template.cache.DataCache;
+import ua.mtsybulskyi.template.domain.Roles;
 import ua.mtsybulskyi.template.domain.UserData;
 import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
@@ -45,7 +46,21 @@ public class RolesHandler extends InputHandler {
             dataCache.putUserData(chatId, user);
             user.setBotState(BotState.ROLES_EDIT);
             return redirectFromMessage(callbackQuery.getMessage(), BotState.ROLES_EDIT);
-        }catch (NumberFormatException ignored){ }
+        } catch (NumberFormatException ignored) {
+        }
+
+        switch (callbackQuery.getData()) {
+            case "back" -> {
+                return redirectFromMessage(callbackQuery.getMessage(),
+                        getPreviousHandlerName());
+            }
+
+            case "error" -> {
+                return getReplyMessage(callbackQuery.getMessage(),
+                        "settings.roles",
+                        false, "error.roles");
+            }
+        }
 
         return redirectFromCallback(callbackQuery, Map.of());
     }
@@ -66,9 +81,9 @@ public class RolesHandler extends InputHandler {
         UserData userData = userDataService.getUserData(chatId);
 
         if (userDataService.hasPrivilege(chatId, "CHANGE_ROLES_PRIVILEGE")) {
-            userDataService.getUsers().forEach(x -> {
-                if(!x.equals(userData))
-                keyboard.add(getUserButton(x));
+            userDataService.getUsers(true).forEach(x -> {
+                if (!x.equals(userData))
+                    keyboard.add(getUserButton(chatId, x));
             });
         }
 
@@ -76,15 +91,28 @@ public class RolesHandler extends InputHandler {
         return keyboard;
     }
 
-    private List<InlineKeyboardButton> getUserButton(UserData user) {
+    private List<InlineKeyboardButton> getUserButton(long chatId, UserData user) {
         InlineKeyboardButton userButton = new InlineKeyboardButton();
         String text = user.getFirstName() + " " + user.getLastName();
-        if(userDataService.getUserRole(user.getChatId()).equals("ADMIN_ROLE")){
+        String role = userDataService.getUserRoleString(user.getChatId());
+        String userRole = userDataService.getUserRoleString(chatId);
+        if (role.equals(Roles.ADMIN_ROLE.toString())) {
             text += " ⚜️";
         }
 
+        if (role.equals(Roles.WORKER_ROLE.toString())) {
+            text += " \uD83D\uDCB8";
+        }
+
+        userButton.setCallbackData(user.getChatId() + "");
+
+        if (Roles.valueOf(userRole).getPriority() >= Roles.valueOf(role).getPriority()) {
+            text += " \uD83D\uDEAB";
+            userButton.setCallbackData("error");
+        }
+
         userButton.setText(text);
-        userButton.setCallbackData(String.valueOf(user.getChatId()));
+
         return List.of(userButton);
     }
 }

@@ -7,6 +7,8 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import ua.mtsybulskyi.template.QuestionAnsweringBot;
 import ua.mtsybulskyi.template.botapi.TelegramFacade;
 
@@ -14,10 +16,14 @@ import ua.mtsybulskyi.template.botapi.TelegramFacade;
 @Getter
 @Configuration
 @ConfigurationProperties(prefix = "bot.settings")
-public class BotConfig {
+public class BotConfig implements WebMvcConfigurer {
     private String webHookPath;
     private String botUserName;
     private String botToken;
+
+    private static final String[] CLASSPATH_RESOURCE_LOCATIONS = {
+            "classpath:/META-INF/resources/", "classpath:/resources/",
+            "classpath:/static/docs/", "classpath:/public/", "classpath:messages/messages" };
 
     @Bean
     public QuestionAnsweringBot myWizardTelegramBot(TelegramFacade telegramFacade) {
@@ -35,7 +41,7 @@ public class BotConfig {
         ReloadableResourceBundleMessageSource messageSource
                 = new ReloadableResourceBundleMessageSource();
 
-        messageSource.setBasename("classpath:messages/messages");
+        messageSource.setBasenames(CLASSPATH_RESOURCE_LOCATIONS);
         messageSource.setDefaultEncoding("UTF-8");
         return messageSource;
     }

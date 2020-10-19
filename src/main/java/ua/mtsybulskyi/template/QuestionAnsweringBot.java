@@ -15,8 +15,8 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import ua.mtsybulskyi.template.botapi.TelegramFacade;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ua.mtsybulskyi.template.botapi.TelegramFacade;
 
 import java.io.File;
 
@@ -63,7 +63,8 @@ public class QuestionAnsweringBot extends TelegramWebhookBot {
         answerCallbackQuery.setText(text);
         try {
             execute(answerCallbackQuery);
-        } catch (TelegramApiException ignored) { }
+        } catch (TelegramApiException ignored) {
+        }
     }
 
     @SneakyThrows
@@ -71,13 +72,13 @@ public class QuestionAnsweringBot extends TelegramWebhookBot {
         execute(sendMessage);
     }
 
-    public void deleteMessage(Message message){
+    public void deleteMessage(Message message) {
         DeleteMessage deleteMessage = new DeleteMessage();
         deleteMessage.setChatId(message.getChatId());
         deleteMessage.setMessageId(message.getMessageId());
         try {
             execute(deleteMessage);
-        } catch (TelegramApiException ignored) { }
+        }catch (TelegramApiException ignored){ }
     }
 
 }

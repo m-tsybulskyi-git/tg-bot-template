@@ -79,7 +79,7 @@ public class ProfileHandle extends InputHandler {
                     " " + userDataService.getAge(chatId) + "\n";
 
         userInfo += "<b>" + messageService.getMessage("profile.role", localeTag) + "</b>" +
-                " " + messageService.getMessage(userDataService.getUserRole(chatId), localeTag) + "\n";
+                " " + messageService.getMessage(userDataService.getUserRoleString(chatId), localeTag) + "\n";
         return userInfo;
     }
 }

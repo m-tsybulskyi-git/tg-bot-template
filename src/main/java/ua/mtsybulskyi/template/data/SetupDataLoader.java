@@ -11,19 +11,20 @@ import ua.mtsybulskyi.template.domain.Roles;
 import ua.mtsybulskyi.template.repository.PrivilegeRepository;
 import ua.mtsybulskyi.template.repository.RoleRepository;
 
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 @Component
 public class SetupDataLoader implements ApplicationListener<ContextRefreshedEvent> {
+    private final Security security;
     boolean alreadySetup = false;
 
     private final RoleRepository roleRepository;
     private final PrivilegeRepository privilegeRepository;
 
-    public SetupDataLoader(RoleRepository roleRepository, PrivilegeRepository privilegeRepository) {
+    public SetupDataLoader(Security security, RoleRepository roleRepository, PrivilegeRepository privilegeRepository) {
+        this.security = security;
         this.roleRepository = roleRepository;
         this.privilegeRepository = privilegeRepository;
     }
@@ -32,15 +33,18 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
     @Transactional
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (alreadySetup) return;
+        security.updateAdminTextKey();
 
         Privilege changeRolesPrivilege = createPrivilegeIfNotFound(Privileges.CHANGE_ROLES_PRIVILEGE.toString());
         Privilege defaultPrivileges = createPrivilegeIfNotFound(Privileges.DEFAULT_PRIVILEGES.toString());
 
 
         List<Privilege> adminPrivileges = Arrays.asList(changeRolesPrivilege, defaultPrivileges);
+        List<Privilege> workerPrivileges = Arrays.asList(changeRolesPrivilege, defaultPrivileges);
         List<Privilege> userPrivileges = Arrays.asList(defaultPrivileges);
 
         createRoleIfNotFound(Roles.ADMIN_ROLE.toString(), adminPrivileges);
+        createRoleIfNotFound(Roles.WORKER_ROLE.toString(), workerPrivileges);
         createRoleIfNotFound(Roles.USER_ROLE.toString(), userPrivileges);
 
         alreadySetup = true;
