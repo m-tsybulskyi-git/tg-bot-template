@@ -55,6 +55,7 @@ public class TelegramFacade {
         BotState botState;
         BotApiMethod<?> reply;
 
+        boolean startMessageException = false;
         botState = switch (message.getText()) {
             case "/start" -> {
 
@@ -64,8 +65,14 @@ public class TelegramFacade {
                 yield BotState.START;
             }
 
-            default -> userDataService.getUserState(chatId);
+            default -> {
+                if(userDataService.getUserState(chatId).equals(BotState.START)) startMessageException = true;
+                yield userDataService.getUserState(chatId);
+            }
         };
+
+        if(startMessageException) return null;
+
         user.setBotState(botState);
         reply = handlerService.processInputMessage(botState, message);
         return reply;

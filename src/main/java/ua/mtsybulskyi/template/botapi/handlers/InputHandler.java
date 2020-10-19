@@ -22,13 +22,13 @@ import java.util.Map;
 
 public abstract class InputHandler {
     protected static final Logger log = org.slf4j.LoggerFactory.getLogger(InputHandler.class);
-    protected final LocaleMessageService messageService;
-    protected final UserDataService userDataService;
-    protected final HandlerService handlerService;
+    public final LocaleMessageService messageService;
+    public final UserDataService userDataService;
+    public final HandlerService handlerService;
 
     private final String markdown = ParseMode.HTML;
 
-    protected String localeTag;
+    public String localeTag;
 
     public abstract BotApiMethod<?> handle(Message message);
 
@@ -82,19 +82,20 @@ public abstract class InputHandler {
                                               boolean currentMessage,
                                               String error) {
         localeTag = userDataService.getLanguageTag(inputMessage.getChatId());
+        long chatId = inputMessage.getChatId();
 
         if (newMessage) {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(inputMessage.getChatId());
             sendMessage.setText(messageText);
-            sendMessage.setReplyMarkup(getInlineKeyboard(error));
+            sendMessage.setReplyMarkup(getInlineKeyboard(error, chatId));
             sendMessage.setParseMode(markdown);
             return sendMessage;
         } else {
             EditMessageText editMessageText = new EditMessageText();
             editMessageText.setChatId(inputMessage.getChatId());
             editMessageText.setText(messageText);
-            editMessageText.setReplyMarkup(getInlineKeyboard(error));
+            editMessageText.setReplyMarkup(getInlineKeyboard(error, chatId));
             editMessageText.setMessageId(inputMessage.getMessageId());
             editMessageText.setParseMode(markdown);
             return editMessageText;
@@ -129,27 +130,33 @@ public abstract class InputHandler {
 
     protected BotApiMethod<?> redirectFromMessage(Message message, BotState botState) {
         long chatId = message.getChatId();
-        userDataService.getUserData(chatId).setBotState(botState);
+        userDataService.setBotState(chatId, botState);
         return handlerService.getHandler(botState).handle(message);
     }
 
     /******************** Keyboard ******************/
 
-    protected InlineKeyboardMarkup getInlineKeyboard(String error) {
+    protected InlineKeyboardMarkup getInlineKeyboard(String error, long chatId) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<InlineKeyboardButton> errorRow = getErrorButton(error);
-        List<List<InlineKeyboardButton>> keyboard = new java.util.ArrayList<>(List.copyOf(getKeyboard()));
+
+        List<List<InlineKeyboardButton>> keyboard = new java.util.ArrayList<>(List.copyOf(getKeyboard(chatId)));
+
         if (!errorRow.isEmpty()) keyboard.add(errorRow);
         inlineKeyboardMarkup.setKeyboard(keyboard);
+
         return inlineKeyboardMarkup;
     }
 
     protected InlineKeyboardMarkup getInlineKeyboard(String error, List<List<InlineKeyboardButton>> keyboardCustom) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<InlineKeyboardButton> errorRow = getErrorButton(error);
+
         List<List<InlineKeyboardButton>> keyboard = new java.util.ArrayList<>(List.copyOf(keyboardCustom));
+
         if (!errorRow.isEmpty()) keyboard.add(errorRow);
         inlineKeyboardMarkup.setKeyboard(keyboard);
+
         return inlineKeyboardMarkup;
     }
 
@@ -171,5 +178,5 @@ public abstract class InputHandler {
         return List.of(button);
     }
 
-    abstract protected List<List<InlineKeyboardButton>> getKeyboard();
+    abstract protected List<List<InlineKeyboardButton>> getKeyboard(long chatId);
 }

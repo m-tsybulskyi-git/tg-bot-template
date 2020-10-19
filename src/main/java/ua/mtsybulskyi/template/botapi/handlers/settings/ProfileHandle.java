@@ -5,7 +5,6 @@ import ua.mtsybulskyi.template.botapi.handlers.InputHandler;
 import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
 import ua.mtsybulskyi.template.service.UserDataService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@Slf4j
 public class ProfileHandle extends InputHandler {
 
     protected ProfileHandle(LocaleMessageService messageService,
@@ -51,7 +49,7 @@ public class ProfileHandle extends InputHandler {
     }
 
     @Override
-    protected List<List<InlineKeyboardButton>> getKeyboard() {
+    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId) {
         InlineKeyboardButton button1 = new InlineKeyboardButton()
                 .setText(messageService.getMessage("profile.edit", localeTag));
         button1.setCallbackData("profileEdit");
@@ -80,8 +78,8 @@ public class ProfileHandle extends InputHandler {
         userInfo += "<b>" + messageService.getMessage("profile.age", localeTag) + "</b>" +
                     " " + userDataService.getAge(chatId) + "\n";
 
-        userInfo += "<b>" + messageService.getMessage("w", localeTag) + "</b>" +
-                " " + userDataService.getUserRole(chatId) + "\n";
+        userInfo += "<b>" + messageService.getMessage("profile.role", localeTag) + "</b>" +
+                " " + messageService.getMessage(userDataService.getUserRole(chatId), localeTag) + "\n";
         return userInfo;
     }
 }

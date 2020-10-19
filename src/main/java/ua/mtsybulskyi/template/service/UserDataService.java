@@ -1,6 +1,7 @@
 package ua.mtsybulskyi.template.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Lists;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -8,11 +9,14 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import ua.mtsybulskyi.template.botapi.BotState;
 import ua.mtsybulskyi.template.domain.Role;
 import ua.mtsybulskyi.template.domain.UserData;
+import ua.mtsybulskyi.template.repository.PrivilegeRepository;
 import ua.mtsybulskyi.template.repository.RoleRepository;
 import ua.mtsybulskyi.template.repository.UserRepository;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Service
@@ -20,14 +24,17 @@ import java.util.Collection;
 public class UserDataService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PrivilegeRepository privilegeRepository;
 
     String notFound = "\uD83D\uDEAB";
 
-    public UserDataService(UserRepository userRepository, RoleRepository roleRepository) {
+    public UserDataService(UserRepository userRepository, RoleRepository roleRepository, PrivilegeRepository privilegeRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.privilegeRepository = privilegeRepository;
     }
 
+    @Transactional
     public void saveStartUserData(Message message) {
         User user = message.getFrom();
         UserData userData = new UserData();
@@ -37,7 +44,7 @@ public class UserDataService {
 
             userData.setFirstName(user.getFirstName());
             userData.setLastName(user.getLastName());
-            userData.setRoles(Arrays.asList(roleRepository.findByName("ROLE_USER")));
+            userData.setRoles(getRole("USER_ROLE"));
 
             saveUserData(userData);
         }
@@ -100,15 +107,73 @@ public class UserDataService {
 
     @Transactional
     public BotState getUserState(long chatId) {
-        String botState = userRepository.findByChatId(chatId).getBotState().toString();
-        if (botState == null) return BotState.START;
+        String botState;
+        try {
+             botState = userRepository.findByChatId(chatId).getBotState().toString();
+        }catch (NullPointerException e){
+            return BotState.START;
+        }
+
         return BotState.valueOf(botState);
     }
 
     @Transactional
     public String getUserRole(long chatId) {
-        Collection<Role> roles = userRepository.findByChatId(chatId).getRoles();
-        return roles.toString();
+        UserData user = userRepository.findByChatId(chatId);
+        StringBuilder stringBuilder = new StringBuilder();
+        Collection<Role> userRoles = user.getRoles();
+        if(userRoles != null) {
+            userRoles.forEach(x -> {
+                if(x != null) stringBuilder.append(x.getName());
+            });
+
+            return stringBuilder.toString();
+        }
+
+        return null;
+    }
+
+    @Transactional
+    public boolean hasPrivilege(long chatId, String name){
+        AtomicBoolean hasPrivileges = new AtomicBoolean(false);
+        Role role = roleRepository.findByName(getUserRole(chatId));
+        if(role != null) {
+            role.getPrivileges().forEach(x -> {
+                if (x.getName().equals(name))
+                    hasPrivileges.set(true);
+            });
+        }
+
+        return hasPrivileges.get();
+    }
+
+    @Transactional
+    public List<UserData> getUsers(){
+        List <UserData> usersData = Lists.newArrayList(userRepository.findAll());
+        return usersData;
+    }
+
+    @Transactional
+    public List<Role> getRoles(){
+       return Lists.newArrayList(roleRepository.findAll());
+    }
+
+    @Transactional
+    public List<Role> getRole(String name){
+        return Arrays.asList(roleRepository.findByName(name));
+    }
+
+    @Transactional
+    public boolean setRole(long chatId, String name){
+        List<Role> role = getRole(name);
+        getUserData(chatId).setRoles(role);
+        return getUserData(chatId).getRoles().equals(role);
+    }
+
+    @Transactional
+    public boolean setBotState(long chatId, BotState botState) {
+        getUserData(chatId).setBotState(botState);
+        return getUserData(chatId).getBotState().equals(botState);
     }
 /*******************Validation************************/
 
@@ -119,4 +184,6 @@ public class UserDataService {
     private boolean validation(int integer){
         return integer <= 0;
     }
+
+
 }

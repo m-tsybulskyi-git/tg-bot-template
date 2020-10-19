@@ -1,6 +1,5 @@
 package ua.mtsybulskyi.template.botapi.handlers.settings;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -16,7 +15,6 @@ import ua.mtsybulskyi.template.service.UserDataService;
 
 import java.util.List;
 
-@Slf4j
 @Component
 public class LanguageHandler extends InputHandler {
 
@@ -81,7 +79,7 @@ public class LanguageHandler extends InputHandler {
     }
 
     @Override
-    protected List<List<InlineKeyboardButton>> getKeyboard() {
+    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId) {
 
         InlineKeyboardButton enButton = new InlineKeyboardButton().setText(
                 messageService.getMessage("language.eu", localeTag)

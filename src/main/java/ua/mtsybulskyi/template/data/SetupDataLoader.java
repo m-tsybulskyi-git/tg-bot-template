@@ -5,10 +5,13 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import ua.mtsybulskyi.template.domain.Privilege;
+import ua.mtsybulskyi.template.domain.Privileges;
 import ua.mtsybulskyi.template.domain.Role;
+import ua.mtsybulskyi.template.domain.Roles;
 import ua.mtsybulskyi.template.repository.PrivilegeRepository;
 import ua.mtsybulskyi.template.repository.RoleRepository;
 
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -20,7 +23,7 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
     private final RoleRepository roleRepository;
     private final PrivilegeRepository privilegeRepository;
 
-    public SetupDataLoader( RoleRepository roleRepository, PrivilegeRepository privilegeRepository) {
+    public SetupDataLoader(RoleRepository roleRepository, PrivilegeRepository privilegeRepository) {
         this.roleRepository = roleRepository;
         this.privilegeRepository = privilegeRepository;
     }
@@ -29,15 +32,16 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
     @Transactional
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (alreadySetup) return;
-        Privilege readPrivilege = createPrivilegeIfNotFound("READ_PRIVILEGE");
-        Privilege writePrivilege = createPrivilegeIfNotFound("WRITE_PRIVILEGE");
 
-        List<Privilege> adminPrivileges = Arrays.asList(readPrivilege, writePrivilege);
-        List<Privilege> userPrivileges = Arrays.asList(readPrivilege);
+        Privilege changeRolesPrivilege = createPrivilegeIfNotFound(Privileges.CHANGE_ROLES_PRIVILEGE.toString());
+        Privilege defaultPrivileges = createPrivilegeIfNotFound(Privileges.DEFAULT_PRIVILEGES.toString());
 
 
-        createRoleIfNotFound("ROLE_ADMIN", adminPrivileges);
-        createRoleIfNotFound("ROLE_USER", userPrivileges);
+        List<Privilege> adminPrivileges = Arrays.asList(changeRolesPrivilege, defaultPrivileges);
+        List<Privilege> userPrivileges = Arrays.asList(defaultPrivileges);
+
+        createRoleIfNotFound(Roles.ADMIN_ROLE.toString(), adminPrivileges);
+        createRoleIfNotFound(Roles.USER_ROLE.toString(), userPrivileges);
 
         alreadySetup = true;
     }
@@ -51,6 +55,7 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
             privilege.setName(name);
             privilegeRepository.save(privilege);
         }
+
         return privilege;
     }
 

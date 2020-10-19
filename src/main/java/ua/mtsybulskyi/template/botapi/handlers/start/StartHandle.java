@@ -11,10 +11,8 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,7 +53,7 @@ public class StartHandle extends InputHandler {
     }
 
     @Override
-    protected List<List<InlineKeyboardButton>> getKeyboard(){
+    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId){
         InlineKeyboardButton button1 = new InlineKeyboardButton()
                 .setText(messageService.getMessage("settings.language", localeTag));
         button1.setCallbackData("language");

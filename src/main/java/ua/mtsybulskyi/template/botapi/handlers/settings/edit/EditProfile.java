@@ -28,14 +28,14 @@ public class EditProfile extends InputHandler {
     @Override
     public BotApiMethod<?> handle(Message message) {
         long chatId = message.getChatId();
+        localeTag = userDataService.getLanguageTag(chatId);
         UserData user = userDataService.getUserData(chatId);
-        localeTag = user.getLanguage();
-
 
         if (userDataService.getUserState(chatId).equals(BotState.PROFILE_EDIT)) {
             user.setBotState(BotState.PROFILE_NAME);
             user.setMessage(message);
         }
+
         Message botMessage = user.getMessage();
         return processUsersInput(message, botMessage);
     }
@@ -131,7 +131,7 @@ public class EditProfile extends InputHandler {
     }
 
     @Override
-    protected List<List<InlineKeyboardButton>> getKeyboard() {
+    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId) {
         return List.of(getInlineNavigation());
     }
 

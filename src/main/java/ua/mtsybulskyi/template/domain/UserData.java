@@ -1,7 +1,8 @@
 package ua.mtsybulskyi.template.domain;
 
 import lombok.AccessLevel;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import ua.mtsybulskyi.template.botapi.BotState;
@@ -11,7 +12,8 @@ import java.io.Serializable;
 import java.util.Collection;
 
 @Entity
-@Data
+@Getter
+@Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserData implements Serializable {
     @Id
