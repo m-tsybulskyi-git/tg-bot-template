@@ -61,17 +61,12 @@ public class QuestionAnsweringBot extends TelegramWebhookBot {
         answerCallbackQuery.setCallbackQueryId(callbackquery.getId());
         answerCallbackQuery.setShowAlert(alert);
         answerCallbackQuery.setText(text);
+
         try {
             execute(answerCallbackQuery);
         } catch (TelegramApiException ignored) {
         }
     }
-
-    @SneakyThrows
-    public void sendMessage(SendMessage sendMessage) {
-        execute(sendMessage);
-    }
-
     public void deleteMessage(Message message) {
         DeleteMessage deleteMessage = new DeleteMessage();
         deleteMessage.setChatId(message.getChatId());
