@@ -4,12 +4,14 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public enum BotState {
+    START,
+
     MENU_MAIN,
     MENU_SETTINGS,
 
-    PROFILE_AGE,
     PROFILE_EDIT,
 
+    PROFILE_AGE,
     PROFILE_EMAIL,
     PROFILE_FILLED,
     PROFILE_GET_AGE,
@@ -22,6 +24,4 @@ public enum BotState {
     SETTINGS_CHANGE_ROLES,
 
     ROLES_EDIT,
-
-    START,
 }

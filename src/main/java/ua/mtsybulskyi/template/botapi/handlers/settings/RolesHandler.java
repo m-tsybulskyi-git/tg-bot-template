@@ -29,10 +29,20 @@ public class RolesHandler extends InputHandler {
     }
 
     @Override
+    public BotState getHandlerName() {
+        return BotState.SETTINGS_CHANGE_ROLES;
+    }
+
+    @Override
+    public BotState getPreviousHandlerName() {
+        return BotState.MENU_SETTINGS;
+    }
+
+    @Override
     public BotApiMethod<?> handle(Message message) {
         long chatId = message.getChatId();
-        localeTag = userDataService.getLanguageTag(chatId);
-        return getReplyMessage(message, "settings.roles", false, null);
+        languageTag = userDataService.getLanguageTag(chatId);
+        return getReplyMessage(message, "settings.roles", null, false, null);
     }
 
     @Override
@@ -57,8 +67,7 @@ public class RolesHandler extends InputHandler {
 
             case "error" -> {
                 return getReplyMessage(callbackQuery.getMessage(),
-                        "settings.roles",
-                        false, "error.roles");
+                        "settings.roles", null, false, "error.roles");
             }
         }
 
@@ -66,17 +75,7 @@ public class RolesHandler extends InputHandler {
     }
 
     @Override
-    public BotState getHandlerName() {
-        return BotState.SETTINGS_CHANGE_ROLES;
-    }
-
-    @Override
-    public BotState getPreviousHandlerName() {
-        return BotState.MENU_SETTINGS;
-    }
-
-    @Override
-    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId) {
+    protected List<List<InlineKeyboardButton>> getDefaultKeyboard(long chatId) {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         UserData userData = userDataService.getUserData(chatId);
 

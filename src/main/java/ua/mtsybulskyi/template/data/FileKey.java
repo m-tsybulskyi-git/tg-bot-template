@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.util.Random;
 
 @Component
-public class Security {
+public class FileKey {
     final private String key1Path = "src/main/resources/static/docs/botKey.txt";
     final private String key2Path = "src/main/resources/static/docs/userKey.txt";
 

@@ -22,8 +22,9 @@ public class BotConfig implements WebMvcConfigurer {
     private String botToken;
 
     private static final String[] CLASSPATH_RESOURCE_LOCATIONS = {
-            "classpath:/META-INF/resources/", "classpath:/resources/",
-            "classpath:/static/docs/", "classpath:/public/", "classpath:messages/messages" };
+            "classpath:/resources/",
+            "classpath:/static/docs/",
+            "classpath:messages/messages" };
 
     @Bean
     public QuestionAnsweringBot myWizardTelegramBot(TelegramFacade telegramFacade) {

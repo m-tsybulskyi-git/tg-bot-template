@@ -75,5 +75,4 @@ public class QuestionAnsweringBot extends TelegramWebhookBot {
             execute(deleteMessage);
         }catch (TelegramApiException ignored){ }
     }
-
 }

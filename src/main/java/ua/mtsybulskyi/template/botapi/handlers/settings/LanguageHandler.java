@@ -31,10 +31,10 @@ public class LanguageHandler extends InputHandler {
 
         if (!user.getMessage().getMessageId().equals(message.getMessageId())) {
             return getReplyMessage(user.getMessage(),
-                    "settings.language", false, "error.language");
+                    "settings.language", null, false, "error.language");
         }
 
-        return getReplyMessage(message, "settings.language", false, null);
+        return getReplyMessage(message, "settings.language", null, false, null);
     }
 
     @Override
@@ -44,16 +44,16 @@ public class LanguageHandler extends InputHandler {
         String error = null;
 
         switch (callbackQuery.getData()) {
-            case "locale.eu" -> {
-                localeTag = "eu-EU";
+            case "language.eu" -> {
+                languageTag = "eu-EU";
                user.setLanguage("eu-EU");
             }
-            case "locale.ua" -> {
-                localeTag = "ua-UA";
+            case "language.ua" -> {
+                languageTag = "ua-UA";
                 user.setLanguage("ua-UA");
             }
-            case "locale.ru" -> {
-                localeTag = "ru-RU";
+            case "language.ru" -> {
+                languageTag = "ru-RU";
                 user.setLanguage("ru-RU");
             }
             case "back" -> {
@@ -65,7 +65,7 @@ public class LanguageHandler extends InputHandler {
             case "error" -> error = "error.language";
         }
 
-        return getReplyMessage(callbackQuery.getMessage(), "settings.language", false, error);
+        return getReplyMessage(callbackQuery.getMessage(), "settings.language", null, false, error);
     }
 
     @Override
@@ -79,22 +79,22 @@ public class LanguageHandler extends InputHandler {
     }
 
     @Override
-    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId) {
+    protected List<List<InlineKeyboardButton>> getDefaultKeyboard(long chatId) {
 
         InlineKeyboardButton enButton = new InlineKeyboardButton().setText(
-                messageService.getMessage("language.eu", localeTag)
+                messageService.getMessage("language.eu", languageTag)
         );
-        enButton.setCallbackData("locale.eu");
+        enButton.setCallbackData("language.eu");
 
         InlineKeyboardButton uaButton = new InlineKeyboardButton().setText(
-                messageService.getMessage("language.ua", localeTag)
+                messageService.getMessage("language.ua", languageTag)
         );
-        uaButton.setCallbackData("locale.ua");
+        uaButton.setCallbackData("language.ua");
 
         InlineKeyboardButton ruButton = new InlineKeyboardButton().setText(
-                messageService.getMessage("language.ru", localeTag)
+                messageService.getMessage("language.ru", languageTag)
         );
-        ruButton.setCallbackData("locale.ru");
+        ruButton.setCallbackData("language.ru");
 
         List<InlineKeyboardButton> languages = List.of(enButton, uaButton, ruButton);
         return List.of(languages, getBackButton());

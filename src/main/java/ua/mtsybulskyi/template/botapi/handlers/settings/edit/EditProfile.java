@@ -13,6 +13,7 @@ import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
 import ua.mtsybulskyi.template.service.UserDataService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,16 +26,25 @@ public class EditProfile extends InputHandler {
         super(messageService, userDataService, handlerService);
     }
 
+
+    @Override
+    public BotState getHandlerName() {
+        return BotState.PROFILE_EDIT;
+    }
+
+    @Override
+    public BotState getPreviousHandlerName() {
+        return BotState.SETTINGS_PROFILE;
+    }
+
     @Override
     public BotApiMethod<?> handle(Message message) {
         long chatId = message.getChatId();
-        localeTag = userDataService.getLanguageTag(chatId);
+        languageTag = userDataService.getLanguageTag(chatId);
         UserData user = userDataService.getUserData(chatId);
 
-        if (userDataService.getUserState(chatId).equals(BotState.PROFILE_EDIT)) {
-            user.setBotState(BotState.PROFILE_NAME);
-            user.setMessage(message);
-        }
+        if (userDataService.getUserState(chatId).equals(BotState.PROFILE_EDIT))
+            user.setBotState(BotState.PROFILE_NAME);  // 1 < use those numbers to understand profile filling logic
 
         Message botMessage = user.getMessage();
         return processUsersInput(message, botMessage);
@@ -48,20 +58,20 @@ public class EditProfile extends InputHandler {
         Message messageFromBot = user.getMessage();
 
         BotState botState = userDataService.getUserState(chatId);
-        if (botState.equals(BotState.PROFILE_AGE) && !data.equals("back") && !data.equals("error")) {
-            user.setBotState(BotState.PROFILE_FILLED);
-            if(!data.equals("next")) user.setGender(data);
 
-            return getReplyMessage(messageFromBot, "profile.age", false, null);
+        if (botState.equals(BotState.PROFILE_AGE) &&
+                !data.equals("back") &&
+                !data.equals("error")) {
+            user.setBotState(BotState.PROFILE_FILLED);
+
+            if (!data.equals("next")) user.setGender(data);
+
+            return getReplyMessage(messageFromBot, "profile.age", null, false, null);
         }
 
         return redirectFromCallback(callbackQuery, Map.of("next", botState));
     }
 
-    @Override
-    public BotState getHandlerName() {
-        return BotState.PROFILE_EDIT;
-    }
 
     private BotApiMethod<?> processUsersInput(Message message, Message botMessage) {
         String usersAnswer = message.getText();
@@ -74,36 +84,41 @@ public class EditProfile extends InputHandler {
 
         if (botState.equals(BotState.PROFILE_NAME)) {
             user.setBotState(BotState.PROFILE_SURNAME);
-            return getReplyMessage(botMessage, "profile.first_name", false, null);
+            return getReplyMessage(botMessage, "profile.first_name",
+                    null, false, null);
         }
 
         if (botState.equals(BotState.PROFILE_SURNAME)) {
             if (!nextState) user.setFirstName(usersAnswer);
             user.setBotState(BotState.PROFILE_EMAIL);
-            return getReplyMessage(botMessage, "profile.last_name", false, null);
+            return getReplyMessage(botMessage, "profile.last_name",
+                    null, false, null);
         }
 
         if (botState.equals(BotState.PROFILE_EMAIL)) {
             if (!nextState) user.setLastName(usersAnswer);
             user.setBotState(BotState.PROFILE_GENDER);
-            return getReplyMessage(botMessage, "profile.email", false, null);
+            return getReplyMessage(botMessage, "profile.email",
+                    null, false, null);
         }
 
         if (botState.equals(BotState.PROFILE_GENDER)) {
             if (!nextState) {
-                if (emailValidation(message.getText())) {
-                    return getReplyMessage(botMessage, "profile.email", false, "error.profile.email");
-                }
+                if (!isEmail(message.getText()))
+                    return getReplyMessage(botMessage, "profile.email",
+                            null, false, "error.profile.email");
                 user.setEmail(usersAnswer);
             }
 
             user.setBotState(BotState.PROFILE_AGE);
-            return getReplyMessage(botMessage, "profile.gender", false, getGenderKeyboard(), null);
+            return getReplyMessage(botMessage, "profile.gender", getGenderKeyboard(),
+                    false, null);
         }
 
-        if(botState.equals(BotState.PROFILE_AGE)){
+        if (botState.equals(BotState.PROFILE_AGE)) {
             if (!nextState) {
-                return getReplyMessage(botMessage, "profile.gender", false, getGenderKeyboard(), "error.profile.gender");
+                return getReplyMessage(botMessage, "profile.gender", getGenderKeyboard(),
+                        false, "error.profile.gender");
             }
         }
 
@@ -114,52 +129,46 @@ public class EditProfile extends InputHandler {
                     age = Integer.parseInt(usersAnswer);
                     user.setAge(age);
                 } catch (NumberFormatException exception) {
-                    return getReplyMessage(botMessage, "profile.age", false, "error.profile.age");
+                    return getReplyMessage(botMessage, "profile.age",
+                            null, false, "error.profile.age");
                 }
             }
-            user.setBotState(BotState.SETTINGS_PROFILE);
-            return redirectFromMessage(botMessage, BotState.SETTINGS_PROFILE);
+            user.setBotState(BotState.SETTINGS_PROFILE); // 9
+            return redirectFromMessage(botMessage, getPreviousHandlerName());
         }
 
         return null;
     }
 
-
     @Override
-    public BotState getPreviousHandlerName() {
-        return BotState.SETTINGS_PROFILE;
-    }
-
-    @Override
-    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId) {
+    protected List<List<InlineKeyboardButton>> getDefaultKeyboard(long chatId) {
         return List.of(getInlineNavigation());
     }
 
     List<InlineKeyboardButton> getInlineNavigation() {
         InlineKeyboardButton nextButton = new InlineKeyboardButton()
-                .setText(messageService.getMessage("menu.continue", localeTag));
+                .setText(messageService.getMessage("menu.continue", languageTag));
         nextButton.setCallbackData("next");
-        List<InlineKeyboardButton> navigationRow = new java.util.ArrayList<>(List.copyOf(getBackButton()));
+        List<InlineKeyboardButton> navigationRow = new ArrayList<>(List.copyOf(getBackButton()));
         navigationRow.add(nextButton);
         return navigationRow;
     }
 
     private List<List<InlineKeyboardButton>> getGenderKeyboard() {
-        InlineKeyboardButton button1 = new InlineKeyboardButton()
-                .setText(messageService.getMessage("man", localeTag));
-        button1.setCallbackData("man");
+        InlineKeyboardButton manButton = new InlineKeyboardButton()
+                .setText(messageService.getMessage("man", languageTag));
+        manButton.setCallbackData("man");
 
-        InlineKeyboardButton button2 = new InlineKeyboardButton()
-                .setText(messageService.getMessage("woman", localeTag));
-        button2.setCallbackData("woman");
+        InlineKeyboardButton wonanButton = new InlineKeyboardButton()
+                .setText(messageService.getMessage("woman", languageTag));
+        wonanButton.setCallbackData("woman");
 
-        List<InlineKeyboardButton> row1 = List.of(button1, button2);
-        List<List<InlineKeyboardButton>> keyboard = List.of(row1, getInlineNavigation());
+        List<InlineKeyboardButton> genderRow = List.of(manButton, wonanButton);
 
-        return keyboard;
+        return List.of(genderRow, getInlineNavigation());
     }
 
-    boolean emailValidation(String email) {
-        return !email.matches("\\b[\\w.%-]+@[-.\\w]+\\.[A-Za-z]{2,4}\\b");
+    boolean isEmail(String email) {
+        return email.matches("\\b[\\w.%-] + @[-.\\w] + \\.[A-Za-z]{2,4}\\b");
     }
 }

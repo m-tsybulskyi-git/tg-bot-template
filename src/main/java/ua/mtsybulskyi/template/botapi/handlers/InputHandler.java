@@ -1,7 +1,7 @@
 package ua.mtsybulskyi.template.botapi.handlers;
 
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
-import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -16,90 +16,67 @@ import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
 import ua.mtsybulskyi.template.service.UserDataService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @author Mykyta Tsybulskyi
+ * @version 1.0
+ */
+
+@RequiredArgsConstructor
 public abstract class InputHandler {
     protected static final Logger log = org.slf4j.LoggerFactory.getLogger(InputHandler.class);
+
     public final LocaleMessageService messageService;
     public final UserDataService userDataService;
     public final HandlerService handlerService;
 
     private final String markdown = ParseMode.HTML;
+    public String languageTag;
 
-    public String localeTag;
-
-    public abstract BotApiMethod<?> handle(Message message);
-
-    public abstract BotApiMethod<?> handle(CallbackQuery callbackQuery);
 
     public abstract BotState getHandlerName();
 
     public abstract BotState getPreviousHandlerName();
 
-    protected InputHandler(LocaleMessageService messageService,
-                           UserDataService userDataService,
-                           HandlerService handlerService) {
-        this.messageService = messageService;
-        this.userDataService = userDataService;
-        this.handlerService = handlerService;
-    }
+    public abstract BotApiMethod<?> handle(Message message);
 
-    protected BotApiMethod<?> getReplyMessage(Message inputMessage, String messageText,
-                                              boolean newMessage, String error, Object... args) {
-        localeTag = userDataService.getLanguageTag(inputMessage.getChatId());
-        UserData user = userDataService.getUserData(inputMessage.getChatId());
-        if(messageText == null || messageText.isEmpty()) {
-            user.setBotState(getPreviousHandlerName());
-            return redirectFromMessage(inputMessage, getPreviousHandlerName());
-        }
+    public abstract BotApiMethod<?> handle(CallbackQuery callbackQuery);
 
-        String text =  messageService.getMessage(messageText, localeTag, args);
-        return  getReplyMessage(inputMessage, text, newMessage, true, error);
-    }
 
+    /***
+     * @param inputMessage message from user
+     * @param textTag tag for text from resource messages
+     * @param createMessage SendMessage = true;
+     *                   EditMessage = false;
+     * @param errorTag (Optional) tag for text from resource with error prefix
+     * @return BotApiMethod (SendMessage, EditMessage ...)
+     */
     protected BotApiMethod<?> getReplyMessage(Message inputMessage,
-                                              String messageText,
-                                              boolean newMessage,
-                                              List<List<InlineKeyboardButton>> keyboard,
-                                              String error,
-                                              Object... args) {
-        if (newMessage) {
-            SendMessage sendMessage = (SendMessage) getReplyMessage(inputMessage, messageText, true, error, args);
-            sendMessage.setReplyMarkup(getInlineKeyboard(error, keyboard));
-            return sendMessage;
-        } else {
-            EditMessageText editMessageText = (EditMessageText) getReplyMessage(inputMessage, messageText, false, error, args);
-            editMessageText.setReplyMarkup(getInlineKeyboard(error, keyboard));
-            return editMessageText;
-        }
-    }
+                                              String textTag,
+                                              List<List<InlineKeyboardButton>> customKeyboard,
+                                              boolean createMessage,
+                                              String errorTag) {
 
-    protected BotApiMethod<?> getReplyMessage(Message inputMessage,
-                                              String messageText,
-                                              boolean newMessage,
-                                              boolean currentMessage,
-                                              String error) {
-        localeTag = userDataService.getLanguageTag(inputMessage.getChatId());
         long chatId = inputMessage.getChatId();
+        languageTag = userDataService.getLanguageTag(inputMessage.getChatId());
 
-        if (newMessage) {
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(inputMessage.getChatId());
-            sendMessage.setText(messageText);
-            sendMessage.setReplyMarkup(getInlineKeyboard(error, chatId));
-            sendMessage.setParseMode(markdown);
-            return sendMessage;
-        } else {
-            EditMessageText editMessageText = new EditMessageText();
-            editMessageText.setChatId(inputMessage.getChatId());
-            editMessageText.setText(messageText);
-            editMessageText.setReplyMarkup(getInlineKeyboard(error, chatId));
-            editMessageText.setMessageId(inputMessage.getMessageId());
-            editMessageText.setParseMode(markdown);
-            return editMessageText;
-        }
+        if (textTag == null || textTag.isEmpty())    // < back to previous bot state if text tag is empty
+            return redirectFromMessage(inputMessage, getPreviousHandlerName());
+
+        String text = messageService.getMessage(textTag, languageTag);
+        if (text == null || text.isEmpty()) text = textTag; // < set text from textTag if message text not found
+
+        InlineKeyboardMarkup keyboard;
+        if (customKeyboard == null)
+             keyboard = getInlineKeyboard(chatId, errorTag); // < default keyboard
+        else keyboard = getInlineKeyboard(customKeyboard, errorTag);
+
+        if (createMessage) return getSendMessage(chatId, text, keyboard);
+        else return getEditMessage(chatId, text, keyboard, inputMessage);
     }
 
     protected BotApiMethod<?> redirectFromCallback(CallbackQuery callbackQuery, Map<String, BotState> map) {
@@ -107,76 +84,92 @@ public abstract class InputHandler {
         long chatId = callbackQuery.getMessage().getChatId();
         UserData userData = userDataService.getUserData(chatId);
 
+        userData.setMessage(callbackQuery.getMessage()); // < set message for edit after bot restart
 
-        stateMap.put("back", getPreviousHandlerName());
+        stateMap.put("back", getPreviousHandlerName());  // < default back callback query
+
         BotState botState = stateMap.get(callbackQuery.getData());
-
-        if (botState == null) {
-            AnswerCallbackQuery errorCallbackQuery = new AnswerCallbackQuery();
-            errorCallbackQuery.setCallbackQueryId(callbackQuery.getId());
-            log.info("error");
-            return errorCallbackQuery;
-        }
-
-        userData.setMessage(callbackQuery.getMessage());
-        userData.setBotState(botState);
-        log.info(botState.toString());
-
-        InputHandler inputHandler = handlerService.findMessageHandler(botState);
+        if (botState == null) return null; // < do not process unknown callback query's
 
         Message message = callbackQuery.getMessage();
-        return inputHandler.handle(message);
+        return redirectFromMessage(message, botState);
     }
 
     protected BotApiMethod<?> redirectFromMessage(Message message, BotState botState) {
         long chatId = message.getChatId();
         userDataService.setBotState(chatId, botState);
-        return handlerService.getHandler(botState).handle(message);
+        return handlerService.findMessageHandler(botState).handle(message);
     }
 
-    /******************** Keyboard ******************/
+    abstract protected List<List<InlineKeyboardButton>> getDefaultKeyboard(long chatId);
 
-    protected InlineKeyboardMarkup getInlineKeyboard(String error, long chatId) {
+    protected InlineKeyboardMarkup getInlineKeyboard(long chatId, String error) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<InlineKeyboardButton> errorRow = getErrorButton(error);
 
-        List<List<InlineKeyboardButton>> keyboard = new java.util.ArrayList<>(List.copyOf(getKeyboard(chatId)));
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>(
+                List.copyOf(getDefaultKeyboard(chatId)));
 
         if (!errorRow.isEmpty()) keyboard.add(errorRow);
-        inlineKeyboardMarkup.setKeyboard(keyboard);
 
+        inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
     }
 
-    protected InlineKeyboardMarkup getInlineKeyboard(String error, List<List<InlineKeyboardButton>> keyboardCustom) {
+    protected InlineKeyboardMarkup getInlineKeyboard(List<List<InlineKeyboardButton>> customKeyboard, String error) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<InlineKeyboardButton> errorRow = getErrorButton(error);
 
-        List<List<InlineKeyboardButton>> keyboard = new java.util.ArrayList<>(List.copyOf(keyboardCustom));
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>(
+                List.copyOf(customKeyboard));
 
-        if (!errorRow.isEmpty()) keyboard.add(errorRow);
+        if (errorRow != null) keyboard.add(errorRow);
+
         inlineKeyboardMarkup.setKeyboard(keyboard);
-
         return inlineKeyboardMarkup;
     }
 
+    /**
+     * @return row of keyboard which contain back button
+     */
     protected List<InlineKeyboardButton> getBackButton() {
         InlineKeyboardButton button = new InlineKeyboardButton()
-                .setText(messageService.getMessage("menu.back", localeTag));
+                .setText(messageService.getMessage("menu.back", languageTag));
         button.setCallbackData("back");
 
         return List.of(button);
     }
 
-    protected List<InlineKeyboardButton> getErrorButton(String error) {
-        if (error == null) return List.of();
+    /***
+     * @param errorTag tag for text from resource with error prefix
+     * @return row of keyboard which contain error message as inline button
+     */
+    private List<InlineKeyboardButton> getErrorButton(String errorTag) {
+        if (errorTag == null) return null;
 
-        InlineKeyboardButton button = new InlineKeyboardButton()
-                .setText("⚠️ " + messageService.getMessage(error, localeTag));
-        button.setCallbackData("error");
+        InlineKeyboardButton errorButton = new InlineKeyboardButton();
+        errorButton.setText("⚠️ " + messageService.getMessage(errorTag, languageTag));
+        errorButton.setCallbackData("error");
 
-        return List.of(button);
+        return List.of(errorButton);
     }
 
-    abstract protected List<List<InlineKeyboardButton>> getKeyboard(long chatId);
+    private SendMessage getSendMessage(long chatId, String text, InlineKeyboardMarkup keyboard) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        sendMessage.setText(text);
+        sendMessage.setReplyMarkup(keyboard);
+        sendMessage.setParseMode(markdown);
+        return sendMessage;
+    }
+
+    private EditMessageText getEditMessage(long chatId, String text, InlineKeyboardMarkup keyboard, Message message) {
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setChatId(chatId);
+        editMessageText.setText(text);
+        editMessageText.setReplyMarkup(keyboard);
+        editMessageText.setMessageId(message.getMessageId());
+        editMessageText.setParseMode(markdown);
+        return editMessageText;
+    }
 }

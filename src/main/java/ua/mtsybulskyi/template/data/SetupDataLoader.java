@@ -17,14 +17,14 @@ import java.util.List;
 
 @Component
 public class SetupDataLoader implements ApplicationListener<ContextRefreshedEvent> {
-    private final Security security;
+    private final FileKey fileKey;
     boolean alreadySetup = false;
 
     private final RoleRepository roleRepository;
     private final PrivilegeRepository privilegeRepository;
 
-    public SetupDataLoader(Security security, RoleRepository roleRepository, PrivilegeRepository privilegeRepository) {
-        this.security = security;
+    public SetupDataLoader(FileKey fileKey, RoleRepository roleRepository, PrivilegeRepository privilegeRepository) {
+        this.fileKey = fileKey;
         this.roleRepository = roleRepository;
         this.privilegeRepository = privilegeRepository;
     }
@@ -33,7 +33,7 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
     @Transactional
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (alreadySetup) return;
-        security.updateAdminTextKey();
+        fileKey.updateAdminTextKey();
 
         Privilege changeRolesPrivilege = createPrivilegeIfNotFound(Privileges.CHANGE_ROLES_PRIVILEGE.toString());
         Privilege defaultPrivileges = createPrivilegeIfNotFound(Privileges.DEFAULT_PRIVILEGES.toString());

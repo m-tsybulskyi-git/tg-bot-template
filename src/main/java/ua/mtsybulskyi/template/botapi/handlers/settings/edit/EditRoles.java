@@ -24,25 +24,40 @@ public class EditRoles extends InputHandler {
     private UserData user;
     private final DataCache dataCache;
 
-    protected EditRoles(LocaleMessageService messageService, UserDataService userDataService, @Lazy HandlerService handlerService, DataCache dataCache) {
+    public BotState getHandlerName() {
+        return BotState.ROLES_EDIT;
+    }
+
+    public BotState getPreviousHandlerName() {
+        return BotState.SETTINGS_CHANGE_ROLES;
+    }
+
+
+    protected EditRoles(LocaleMessageService messageService,
+                        UserDataService userDataService,
+                        @Lazy HandlerService handlerService,
+                        DataCache dataCache) {
         super(messageService, userDataService, handlerService);
         this.dataCache = dataCache;
     }
 
     @Override
     public BotApiMethod<?> handle(Message message) {
-        localeTag = userDataService.getLanguageTag(message.getChatId());
+        languageTag = userDataService.getLanguageTag(message.getChatId());
         user = dataCache.getUserData(message.getChatId());
-        if(user == null) return redirectFromMessage(message, getPreviousHandlerName());
-        String text = user.getFirstName() + " " + user.getLastName();
-        return getReplyMessage(message, text, false, true, null);
+
+        if (user == null) return redirectFromMessage(message, getPreviousHandlerName());
+
+        return getReplyMessage(message, getUserShortInfo(user),
+                null, true, null);
     }
 
     public BotApiMethod<?> handle(CallbackQuery callbackQuery) {
         long chatId = callbackQuery.getMessage().getChatId();
-        localeTag = userDataService.getLanguageTag(chatId);
+        languageTag = userDataService.getLanguageTag(chatId);
         user = dataCache.getUserData(chatId);
-        if(user == null) return redirectFromMessage(
+
+        if (user == null) return redirectFromMessage(
                 callbackQuery.getMessage(), getPreviousHandlerName());
 
         String error = null;
@@ -53,24 +68,21 @@ public class EditRoles extends InputHandler {
                 userDataService.setBotState(chatId, botState);
                 return redirectFromMessage(callbackQuery.getMessage(), botState);
             }
-            case "error" -> error ="error.roles";
+            case "error" -> error = "error.roles";
             default -> userDataService.setRole(user.getChatId(), callbackQuery.getData());
         }
 
-        String text = user.getFirstName() + " " + user.getLastName();
-        return getReplyMessage(callbackQuery.getMessage(), text,
-                false, true, error);
+        return getReplyMessage(callbackQuery.getMessage(), getUserShortInfo(user),
+                null, true, error);
     }
 
-    public BotState getHandlerName() {
-        return BotState.ROLES_EDIT;
+    private String getUserShortInfo(UserData user) {
+        return user.getFirstName() + " " +
+                user.getLastName() + " -> " +
+                messageService.getMessage(userDataService.getUserRoleString(user.getChatId()), languageTag);
     }
 
-    public BotState getPreviousHandlerName() {
-        return BotState.SETTINGS_CHANGE_ROLES;
-    }
-
-    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId) {
+    protected List<List<InlineKeyboardButton>> getDefaultKeyboard(long chatId) {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
 
         if (userDataService.hasPrivilege(chatId, "CHANGE_ROLES_PRIVILEGE")) {
@@ -83,23 +95,23 @@ public class EditRoles extends InputHandler {
     }
 
     private List<InlineKeyboardButton> getRoleButton(long chatId, Role role) {
-        InlineKeyboardButton button = new InlineKeyboardButton();
-        String text = messageService.getMessage(role.getName(), localeTag);
-
-        if (userDataService.getUserRoleString(user.getChatId()).equals(role.getName())) {
-            text += " ✅";
-        }
-
+        InlineKeyboardButton userButton = new InlineKeyboardButton();
+        String text = messageService.getMessage(role.getName(), languageTag);
         String userRole = userDataService.getUserRoleString(chatId);
+        String currentRole = role.getName();
+
+        if (currentRole.equals(userRole))  text += " ✅";
+        else if (currentRole.equals(Roles.ADMIN_ROLE.toString())) text += " ⚜️";
+        else if (currentRole.equals(Roles.WORKER_ROLE.toString())) text += " \uD83D\uDCB8";
+
         if (Roles.valueOf(userRole).getPriority() > Roles.valueOf(role.getName()).getPriority()) {
             text += " \uD83D\uDEAB";
-            button.setCallbackData("error");
-        }else{
-            button.setCallbackData(role.getName());
+            userButton.setCallbackData("error");
+        } else {
+            userButton.setCallbackData(role.getName());
         }
 
-        button.setText(text);
-
-        return List.of(button);
+        userButton.setText(text);
+        return List.of(userButton);
     }
 }

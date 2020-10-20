@@ -25,10 +25,21 @@ public class MainMenuHandler extends InputHandler {
     }
 
     @Override
+    public BotState getHandlerName() {
+        return BotState.MENU_MAIN;
+    }
+
+    @Override
+    public BotState getPreviousHandlerName() {
+        return getHandlerName();
+    }
+
+
+    @Override
     public BotApiMethod<?> handle(Message message) {
-        long chatId = message.getChatId();
-        localeTag = userDataService.getLanguageTag(chatId);
-        return getReplyMessage(message, "menu.main", false, null);
+        languageTag = userDataService.getLanguageTag(message.getChatId());
+
+        return getReplyMessage(message, "menu.main",null, false, null);
     }
 
     @Override
@@ -39,23 +50,12 @@ public class MainMenuHandler extends InputHandler {
     }
 
     @Override
-    public BotState getHandlerName() {
-        return BotState.MENU_MAIN;
-    }
+    protected List<List<InlineKeyboardButton>> getDefaultKeyboard(long chatId) {
+        InlineKeyboardButton settingsButton = new InlineKeyboardButton();
+        settingsButton.setText(messageService.getMessage("menu.settings", languageTag));
+        settingsButton.setCallbackData("settings");
+        List<InlineKeyboardButton> settingsRow = List.of(settingsButton);
 
-    @Override
-    public BotState getPreviousHandlerName() {
-        return getHandlerName();
-    }
-
-    @Override
-    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId) {
-        InlineKeyboardButton settings = new InlineKeyboardButton()
-                .setText(messageService.getMessage("menu.settings", localeTag));
-        settings.setCallbackData("settings");
-        List<InlineKeyboardButton> settingsRow = List.of(settings);
-
-        List<List<InlineKeyboardButton>> keyboard = List.of(settingsRow);
-        return keyboard;
+        return List.of(settingsRow);
     }
 }

@@ -25,21 +25,6 @@ public class SettingsHandler extends InputHandler {
     }
 
     @Override
-    public BotApiMethod<?> handle(Message message) {
-        localeTag = userDataService.getLanguageTag(message.getChatId());
-        return getReplyMessage(message, "menu.settings", false, null);
-    }
-
-    @Override
-    public BotApiMethod<?> handle(CallbackQuery callbackQuery) {
-        Map<String, BotState> map = Map.of(
-                "profile", BotState.SETTINGS_PROFILE,
-                "language", BotState.SETTINGS_LANGUAGE,
-                    "roles", BotState.SETTINGS_CHANGE_ROLES);
-        return redirectFromCallback(callbackQuery, map);
-    }
-
-    @Override
     public BotState getHandlerName() {
         return BotState.MENU_SETTINGS;
     }
@@ -50,30 +35,47 @@ public class SettingsHandler extends InputHandler {
     }
 
     @Override
-    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId) {
+    public BotApiMethod<?> handle(Message message) {
+        languageTag = userDataService.getLanguageTag(message.getChatId());
 
-        InlineKeyboardButton profile = new InlineKeyboardButton()
-                .setText(messageService.getMessage("settings.profile", localeTag));
-        profile.setCallbackData("profile");
-        List<InlineKeyboardButton> row1 = List.of(profile);
+        return getReplyMessage(message, "menu.settings", null, false, null);
+    }
+
+    @Override
+    public BotApiMethod<?> handle(CallbackQuery callbackQuery) {
+        Map<String, BotState> map = Map.of(
+                "profile", BotState.SETTINGS_PROFILE,
+                "language", BotState.SETTINGS_LANGUAGE,
+                "roles", BotState.SETTINGS_CHANGE_ROLES);
+        return redirectFromCallback(callbackQuery, map);
+    }
+
+    @Override
+    protected List<List<InlineKeyboardButton>> getDefaultKeyboard(long chatId) {
+
+        InlineKeyboardButton profileButton = new InlineKeyboardButton()
+                .setText(messageService.getMessage("settings.profile", languageTag));
+        profileButton.setCallbackData("profile");
+        List<InlineKeyboardButton> profileRow = List.of(profileButton);
 
 
-        InlineKeyboardButton language = new InlineKeyboardButton()
-                .setText(messageService.getMessage("settings.language", localeTag));
-        language.setCallbackData("language");
-        List<InlineKeyboardButton> row2 = List.of(language);
+        InlineKeyboardButton languageButton = new InlineKeyboardButton()
+                .setText(messageService.getMessage("settings.language", languageTag));
+        languageButton.setCallbackData("language");
+        List<InlineKeyboardButton> languageRow = List.of(languageButton);
 
-        List<List<InlineKeyboardButton>> keyboard = new java.util.ArrayList<>(List.of(row1, row2));
+        List<List<InlineKeyboardButton>> keyboard = new java.util.ArrayList<>(List.of(profileRow, languageRow));
 
         if(userDataService.hasPrivilege(chatId, "CHANGE_ROLES_PRIVILEGE")) {
-            InlineKeyboardButton roles = new InlineKeyboardButton()
-                    .setText(messageService.getMessage("settings.roles", localeTag));
-            roles.setCallbackData("roles");
-            List<InlineKeyboardButton> row3 = List.of(roles);
-            keyboard.add(row3);
+            InlineKeyboardButton rolesButton = new InlineKeyboardButton()
+                    .setText(messageService.getMessage("settings.roles", languageTag));
+            rolesButton.setCallbackData("roles");
+            List<InlineKeyboardButton> rolesRow = List.of(rolesButton);
+            keyboard.add(rolesRow);
         }
 
         keyboard.add(getBackButton());
+
         return keyboard;
     }
 }

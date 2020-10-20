@@ -31,7 +31,7 @@ public class StartHandle extends InputHandler {
     public BotApiMethod<?> handle(Message message) {
         userDataService.saveStartUserData(message);
         localeTag = userDataService.getLanguageTag(message.getChatId());
-        return getReplyMessage(message, getMessageText(message), true, true, null);
+        return getReplyMessage(message, getMessageText(message), null, true, null);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class StartHandle extends InputHandler {
     }
 
     @Override
-    protected List<List<InlineKeyboardButton>> getKeyboard(long chatId){
+    protected List<List<InlineKeyboardButton>> getDefaultKeyboard(long chatId){
         InlineKeyboardButton button1 = new InlineKeyboardButton()
                 .setText(messageService.getMessage("settings.language", localeTag));
         button1.setCallbackData("language");
