@@ -47,18 +47,23 @@ public class TelegramFacade {
         Message message = update.getMessage();
         if (message != null) {
             if (message.hasDocument()) {
-                downloadFile(message.getDocument()); // < if file text has key from telegram bot
-                                                     // < set admin role for this user
+                downloadFile(message.getDocument());
                 if (security.compareAdminKeys()) {
                     userDataService.setRole(message.getChatId(),
                             Roles.ADMIN_ROLE.toString());
 
                     userDataService.setBotState(message.getChatId(),
                             BotState.SETTINGS_CHANGE_ROLES);
+                    replyMessage = handleInput(message);
+
                 }
+
+            } else if (message.hasText()) {
+                questionAnsweringBot.deleteMessage(message);
+
+                replyMessage = handleInput(message);
             }
 
-            replyMessage = handleInput(message);
             questionAnsweringBot.deleteMessage(message);
         }
         return replyMessage;
@@ -107,23 +112,21 @@ public class TelegramFacade {
     }
 
     @SneakyThrows
-    public void downloadFile(Document document) {
+    public File downloadFile(Document document) {
         File file = getFilePath(document);
-        if(file == null) return;
 
         java.io.File localFile = new java.io.File("src/main/resources/static/docs/userKey.txt");
         InputStream is = new URL(file.getFileUrl(questionAnsweringBot.getBotToken())).openStream();
         FileUtils.copyInputStreamToFile(is, localFile);
+
+        return null;
     }
 
     @SneakyThrows
     public File getFilePath(Document document) {
-        if(document.getFileName().equals("botKey.txt") && document.getFileSize() == security.getLength()) {
-            GetFile getFile = new GetFile();
-            getFile.setFileId(document.getFileId());
-            return questionAnsweringBot.execute(getFile);
-        }
-
-        return null;
+        GetFile getFile = new GetFile();
+        getFile.setFileId(document.getFileId());
+        File file = questionAnsweringBot.execute(getFile);
+        return file;
     }
 }

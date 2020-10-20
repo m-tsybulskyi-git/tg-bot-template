@@ -14,12 +14,6 @@ public class Security {
     final private String key1Path = "src/main/resources/static/docs/botKey.txt";
     final private String key2Path = "src/main/resources/static/docs/userKey.txt";
 
-    private final int length = 128;
-
-    public int getLength() {
-        return length;
-    }
-
     private String keyGenerator(int length) {
         String capitalCaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         String lowerCaseLetters = "abcdefghijklmnopqrstuvwxyz";
@@ -43,7 +37,7 @@ public class Security {
 
     @SneakyThrows
     public void updateAdminTextKey() {
-        String key = keyGenerator(length);
+        String key = keyGenerator(128);
         File file = ResourceUtils.getFile(key1Path);
 
         Path path = file.toPath();
