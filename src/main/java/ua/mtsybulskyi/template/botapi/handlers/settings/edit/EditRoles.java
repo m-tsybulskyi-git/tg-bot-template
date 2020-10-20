@@ -12,6 +12,7 @@ import ua.mtsybulskyi.template.cache.DataCache;
 import ua.mtsybulskyi.template.domain.Role;
 import ua.mtsybulskyi.template.domain.Roles;
 import ua.mtsybulskyi.template.domain.UserData;
+import ua.mtsybulskyi.template.service.Emoji;
 import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
 import ua.mtsybulskyi.template.service.UserDataService;
@@ -100,9 +101,9 @@ public class EditRoles extends InputHandler {
         String userRole = userDataService.getUserRoleString(chatId);
         String currentRole = role.getName();
 
-        if (currentRole.equals(userRole))  text += " ✅";
-        else if (currentRole.equals(Roles.ADMIN_ROLE.toString())) text += " ⚜️";
-        else if (currentRole.equals(Roles.WORKER_ROLE.toString())) text += " \uD83D\uDCB8";
+        if (currentRole.equals(userRole))  text += " " + Emoji.CURRENT.toString();
+        else if (currentRole.equals(Roles.ADMIN_ROLE.toString())) text += " " + Emoji.ADMIN.toString();
+        else if (currentRole.equals(Roles.WORKER_ROLE.toString())) text += " " + Emoji.WORKER.toString();
 
         if (Roles.valueOf(userRole).getPriority() > Roles.valueOf(role.getName()).getPriority()) {
             text += " \uD83D\uDEAB";

@@ -29,7 +29,7 @@ public class UserDataService {
     private final RoleRepository roleRepository;
     private final PrivilegeRepository privilegeRepository;
 
-    String notFound = "\uD83D\uDEAB";
+    String notFound = Emoji.DENY.toString();
 
     public UserDataService(UserRepository userRepository, RoleRepository roleRepository, PrivilegeRepository privilegeRepository) {
         this.userRepository = userRepository;

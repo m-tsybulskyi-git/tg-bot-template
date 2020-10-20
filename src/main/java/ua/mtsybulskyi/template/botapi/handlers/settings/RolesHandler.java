@@ -11,6 +11,7 @@ import ua.mtsybulskyi.template.botapi.handlers.InputHandler;
 import ua.mtsybulskyi.template.cache.DataCache;
 import ua.mtsybulskyi.template.domain.Roles;
 import ua.mtsybulskyi.template.domain.UserData;
+import ua.mtsybulskyi.template.service.Emoji;
 import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
 import ua.mtsybulskyi.template.service.UserDataService;
@@ -96,17 +97,17 @@ public class RolesHandler extends InputHandler {
         String role = userDataService.getUserRoleString(user.getChatId());
         String userRole = userDataService.getUserRoleString(chatId);
         if (role.equals(Roles.ADMIN_ROLE.toString())) {
-            text += " ⚜️";
+            text += " " + Emoji.ADMIN.toString();
         }
 
         if (role.equals(Roles.WORKER_ROLE.toString())) {
-            text += " \uD83D\uDCB8";
+            text += " " + Emoji.WORKER.toString();
         }
 
         userButton.setCallbackData(user.getChatId() + "");
 
         if (Roles.valueOf(userRole).getPriority() >= Roles.valueOf(role).getPriority()) {
-            text += " \uD83D\uDEAB";
+            text += " " + Emoji.DENY.toString();
             userButton.setCallbackData("error");
         }
 
