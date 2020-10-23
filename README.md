@@ -12,5 +12,5 @@
 
 ### Bot Map:
 
-![Bot Map](https://github.com/m-tsybulskyi-git/tg-bot-template/blob/master/src/main/resources/static/images/bot-map%202.0.png)
+![Bot Map](https://github.com/m-tsybulskyi-git/tg-bot-template/blob/master/src/main/resources/static/images/bot-map.png)
 
