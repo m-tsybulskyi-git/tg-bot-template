@@ -50,7 +50,7 @@ public class EditRoles extends InputHandler {
         if (user == null) return redirectFromMessage(message, getPreviousHandlerName());
 
         return getReplyMessage(message, getUserShortInfo(user),
-                null, true, null);
+                null, false, null);
     }
 
     public BotApiMethod<?> handle(CallbackQuery callbackQuery) {
@@ -74,13 +74,11 @@ public class EditRoles extends InputHandler {
         }
 
         return getReplyMessage(callbackQuery.getMessage(), getUserShortInfo(user),
-                null, true, error);
+                null, false, error);
     }
 
     private String getUserShortInfo(UserData user) {
-        return user.getFirstName() + " " +
-                user.getLastName() + " -> " +
-                messageService.getMessage(userDataService.getUserRoleString(user.getChatId()), languageTag);
+        return user.getFirstName() + " " + user.getLastName();
     }
 
     protected List<List<InlineKeyboardButton>> getDefaultKeyboard(long chatId) {
@@ -98,14 +96,15 @@ public class EditRoles extends InputHandler {
     private List<InlineKeyboardButton> getRoleButton(long chatId, Role role) {
         InlineKeyboardButton userButton = new InlineKeyboardButton();
         String text = messageService.getMessage(role.getName(), languageTag);
-        String userRole = userDataService.getUserRoleString(chatId);
+        String userRole = userDataService.getUserRoleString(user.getChatId());
         String currentRole = role.getName();
 
-        if (currentRole.equals(userRole))  text += " " + Emoji.CURRENT.toString();
+        if (currentRole.equals(userRole)) text += " " + Emoji.CURRENT.toString();
         else if (currentRole.equals(Roles.ADMIN_ROLE.toString())) text += " " + Emoji.ADMIN.toString();
         else if (currentRole.equals(Roles.WORKER_ROLE.toString())) text += " " + Emoji.WORKER.toString();
 
-        if (Roles.valueOf(userRole).getPriority() > Roles.valueOf(role.getName()).getPriority()) {
+
+        if (Roles.valueOf(userDataService.getUserRoleString(chatId)).getPriority() > Roles.valueOf(role.getName()).getPriority()) {
             text += " \uD83D\uDEAB";
             userButton.setCallbackData("error");
         } else {

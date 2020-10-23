@@ -176,14 +176,14 @@ public class UserDataService {
     @Transactional
     public List<UserData> getUsers(boolean sorted) {
         ArrayList<UserData> usersData = new ArrayList<>();
-        if(sorted){
+        if (sorted) {
             List<Roles> allRoles = Arrays.asList(Roles.class.getEnumConstants());
             ArrayList<UserData> finalUsersData = usersData;
             allRoles.forEach(x -> {
                 Role role = roleRepository.findByName(x.toString());
                 finalUsersData.addAll(userRepository.findAllByRoles(role));
             });
-        }else{
+        } else {
             usersData = Lists.newArrayList(userRepository.findAll());
         }
 
@@ -195,11 +195,11 @@ public class UserDataService {
         List<Roles> roles = Arrays.asList(Roles.class.getEnumConstants());
         List<Role> userRoles = new ArrayList<>();
 
-        if(sorted){
+        if (sorted) {
             List<Role> finalUserRoles = userRoles;
             roles.forEach(x -> finalUserRoles
                     .add(roleRepository.findByName(x.toString())));
-        }else {
+        } else {
             userRoles = Lists.newArrayList(roleRepository.findAll());
         }
 
@@ -223,8 +223,6 @@ public class UserDataService {
         getUserData(chatId).setBotState(botState);
         return getUserData(chatId).getBotState().equals(botState);
     }
-
-    /*******************Validation************************/
 
     private boolean validation(String text) {
         return text == null || text.isEmpty();

@@ -29,7 +29,7 @@ public class ProfileHandle extends InputHandler {
         long chatId = message.getChatId();
         languageTag = userDataService.getLanguageTag(chatId);
 
-        return getReplyMessage(message, getUserData(chatId), null, true, null);
+        return getReplyMessage(message, getUserData(chatId), null, false, null);
     }
 
     @Override

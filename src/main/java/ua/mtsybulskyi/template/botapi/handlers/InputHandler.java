@@ -2,6 +2,7 @@ package ua.mtsybulskyi.template.botapi.handlers;
 
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
+import org.springframework.context.NoSuchMessageException;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -16,10 +17,7 @@ import ua.mtsybulskyi.template.service.HandlerService;
 import ua.mtsybulskyi.template.service.LocaleMessageService;
 import ua.mtsybulskyi.template.service.UserDataService;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Mykyta Tsybulskyi
@@ -67,12 +65,16 @@ public abstract class InputHandler {
         if (textTag == null || textTag.isEmpty())    // < back to previous bot state if text tag is empty
             return redirectFromMessage(inputMessage, getPreviousHandlerName());
 
-        String text = messageService.getMessage(textTag, languageTag);
-        if (text == null || text.isEmpty()) text = textTag; // < set text from textTag if message text not found
+        String text;
+        try {
+            text = messageService.getMessage(textTag, languageTag);
+        } catch (NoSuchMessageException e) {
+            text = textTag;
+        }
 
         InlineKeyboardMarkup keyboard;
         if (customKeyboard == null)
-             keyboard = getInlineKeyboard(chatId, errorTag); // < default keyboard
+            keyboard = getInlineKeyboard(chatId, errorTag); // < default keyboard
         else keyboard = getInlineKeyboard(customKeyboard, errorTag);
 
         if (createMessage) return getSendMessage(chatId, text, keyboard);
@@ -110,7 +112,7 @@ public abstract class InputHandler {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>(
                 List.copyOf(getDefaultKeyboard(chatId)));
 
-        if (!errorRow.isEmpty()) keyboard.add(errorRow);
+        if (errorRow != null) keyboard.add(errorRow);
 
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
@@ -145,7 +147,7 @@ public abstract class InputHandler {
      * @return row of keyboard which contain error message as inline button
      */
     private List<InlineKeyboardButton> getErrorButton(String errorTag) {
-        if (errorTag == null) return null;
+        if (errorTag == null) return List.of();
 
         InlineKeyboardButton errorButton = new InlineKeyboardButton();
         errorButton.setText("⚠️ " + messageService.getMessage(errorTag, languageTag));

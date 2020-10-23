@@ -46,6 +46,7 @@ public class TelegramFacade {
         Message message = update.getMessage();
         if (message != null) {
             replyMessage = handleInput(message);
+            questionAnsweringBot.deleteMessage(message);
         }
         return replyMessage;
     }
@@ -87,7 +88,7 @@ public class TelegramFacade {
 
         } else if (message.hasDocument()) {
             downloadFile(message.getDocument());
-            if (fileKey.compareAdminKeys()) {  // < if file text has key from telegram bot
+            if (fileKey.compareAdminKeys()) { // < if file text has key from telegram bot
                 userDataService.setRole(message.getChatId(),
                         Roles.ADMIN_ROLE.toString());
 
